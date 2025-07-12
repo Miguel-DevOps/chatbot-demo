@@ -37,6 +37,8 @@
 | Lucide Icons     |                | Vitest (testing)      |
 | Radix UI         |                | PHPUnit (testing)     |
 
+- **API de IA utilizada:** Este proyecto utiliza la API de Gemini para procesamiento de lenguaje natural y generación de respuestas inteligentes.
+
 ## 🎯 Objetivo del Proyecto
 
 Ofrecer un chatbot portable y desacoplado, instalable en cualquier servidor web, incluso aquellos que solo permiten PHP. Ideal para WordPress, sitios corporativos, blogs y cualquier entorno donde Node.js no esté disponible.
