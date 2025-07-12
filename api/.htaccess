@@ -1,0 +1,43 @@
+# Configuración de Apache para la API del Chatbot
+
+# Habilitar reescritura de URLs
+RewriteEngine On
+
+# Configurar CORS para la API
+<FilesMatch "\.(php)$">
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+</FilesMatch>
+
+# Manejar preflight requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Seguridad básica
+<Files "*.php">
+    # Prevenir acceso directo a archivos de configuración
+    <FilesMatch "^(config|\.env)">
+        Order Allow,Deny
+        Deny from all
+    </FilesMatch>
+</Files>
+
+# Configurar límites de tiempo y memoria
+php_value max_execution_time 30
+php_value memory_limit 128M
+php_value post_max_size 10M
+php_value upload_max_filesize 10M
+
+# Configurar headers de seguridad
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+# Cache control para API
+<FilesMatch "\.(php)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+</FilesMatch>
