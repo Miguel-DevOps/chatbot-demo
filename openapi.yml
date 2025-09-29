@@ -1,0 +1,449 @@
+openapi: 3.0.3
+info:
+  title: ChatBot Demo API
+  description: API REST para el sistema de chatbot con IA, compatible con hosting PHP compartido
+  version: 2.0.0
+  contact:
+    name: Miguel-DevOps
+    url: https://github.com/Miguel-DevOps/chatbot-demo
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Servidor de desarrollo local
+  - url: https://yourdomain.com/api
+    description: Servidor de producción
+
+paths:
+  /:
+    get:
+      summary: Información de la API
+      description: Retorna información básica sobre la API y sus endpoints disponibles
+      operationId: getApiInfo
+      tags:
+        - System
+      responses:
+        '200':
+          description: Información de la API retornada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiInfo'
+
+  /health:
+    get:
+      summary: Health Check
+      description: Verifica el estado de la API y sus dependencias
+      operationId: getHealth
+      tags:
+        - System
+      responses:
+        '200':
+          description: Estado de la API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /health.php:
+    get:
+      summary: Health Check (legacy endpoint)
+      description: Endpoint de compatibilidad para verificar el estado de la API
+      operationId: getHealthLegacy
+      tags:
+        - System
+      responses:
+        '200':
+          description: Estado de la API
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /chat:
+    post:
+      summary: Enviar mensaje al chatbot
+      description: Procesa un mensaje del usuario y retorna la respuesta del chatbot
+      operationId: sendChatMessage
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+            examples:
+              simple_question:
+                summary: Pregunta simple
+                value:
+                  message: "¿Cuál es el propósito de este chatbot?"
+              complex_question:
+                summary: Pregunta compleja
+                value:
+                  message: "Explícame cómo funciona la integración con WordPress y qué beneficios tiene"
+      responses:
+        '200':
+          description: Respuesta del chatbot generada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Error de validación en el request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '429':
+          description: Rate limit excedido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitError'
+          headers:
+            Retry-After:
+              description: Tiempo en segundos para el próximo intento
+              schema:
+                type: integer
+                example: 60
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          description: Error del servicio externo (Gemini API)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExternalServiceError'
+
+  /chat.php:
+    post:
+      summary: Enviar mensaje al chatbot (legacy endpoint)
+      description: Endpoint de compatibilidad para procesar mensajes del chatbot
+      operationId: sendChatMessageLegacy
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Respuesta del chatbot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+
+    options:
+      summary: CORS preflight para chat
+      description: Maneja preflight requests para CORS
+      operationId: chatOptions
+      tags:
+        - CORS
+      responses:
+        '200':
+          description: CORS headers aplicados
+
+components:
+  schemas:
+    ApiInfo:
+      type: object
+      required:
+        - service
+        - version
+        - status
+        - environment
+        - endpoints
+        - timestamp
+      properties:
+        service:
+          type: string
+          example: "Chatbot Demo API"
+          description: Nombre del servicio
+        version:
+          type: string
+          example: "2.0.0"
+          description: Versión de la API
+        status:
+          type: string
+          example: "running"
+          description: Estado actual del servicio
+        environment:
+          type: string
+          enum: [development, staging, production]
+          example: "development"
+          description: Entorno de ejecución
+        endpoints:
+          type: object
+          properties:
+            "POST /chat.php":
+              type: string
+              example: "Chat with AI"
+            "GET /health.php":
+              type: string
+              example: "Health check"
+            "GET /":
+              type: string
+              example: "API information"
+          description: Endpoints disponibles
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-15T22:58:19+00:00"
+          description: Timestamp de la respuesta
+
+    ChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          example: "¿Cuál es el propósito de este chatbot?"
+          description: Mensaje del usuario para el chatbot
+
+    ChatResponse:
+      type: object
+      required:
+        - success
+        - response
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          example: true
+          description: Indica si la operación fue exitosa
+        response:
+          type: string
+          example: "Este chatbot está diseñado para ayudarte con información sobre el proyecto..."
+          description: Respuesta generada por el chatbot
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-15T22:58:19+00:00"
+          description: Timestamp de cuando se generó la respuesta
+        mode:
+          type: string
+          enum: [demo, production]
+          example: "production"
+          description: Modo de operación del chatbot
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - service
+        - version
+        - environment
+        - timestamp
+      properties:
+        status:
+          type: string
+          example: "healthy"
+          description: Estado general del servicio
+        service:
+          type: string
+          example: "Chatbot Demo API"
+          description: Nombre del servicio
+        version:
+          type: string
+          example: "2.0.0"
+          description: Versión de la API
+        environment:
+          type: string
+          enum: [development, staging, production]
+          example: "development"
+          description: Entorno de ejecución
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-15T22:58:19+00:00"
+          description: Timestamp del health check
+        uptime:
+          type: string
+          example: "2d 5h 30m"
+          description: Tiempo de actividad del servicio
+        checks:
+          type: object
+          description: Verificaciones detalladas de componentes
+          properties:
+            database:
+              $ref: '#/components/schemas/ComponentCheck'
+            knowledge_base:
+              $ref: '#/components/schemas/KnowledgeBaseCheck'
+            api_key:
+              $ref: '#/components/schemas/ApiKeyCheck'
+
+    ComponentCheck:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          example: "healthy"
+          description: Estado del componente
+        path:
+          type: string
+          example: "/path/to/database.db"
+          description: Ruta del componente verificado
+        exists:
+          type: boolean
+          example: true
+          description: Si el recurso existe
+        writable:
+          type: boolean
+          example: true
+          description: Si el recurso es escribible
+        error:
+          type: string
+          example: "Connection timeout"
+          description: Mensaje de error si el componente falla
+
+    KnowledgeBaseCheck:
+      allOf:
+        - $ref: '#/components/schemas/ComponentCheck'
+        - type: object
+          properties:
+            files_count:
+              type: integer
+              example: 5
+              description: Número de archivos en la base de conocimiento
+            files:
+              type: array
+              items:
+                type: string
+              example: ["intro.md", "features.md", "api.md"]
+              description: Lista de archivos disponibles
+
+    ApiKeyCheck:
+      allOf:
+        - $ref: '#/components/schemas/ComponentCheck'
+        - type: object
+          properties:
+            mode:
+              type: string
+              enum: [demo, production]
+              example: "production"
+              description: Modo de operación de la API key
+            configured:
+              type: boolean
+              example: true
+              description: Si la API key está configurada
+
+    ApiError:
+      type: object
+      required:
+        - error
+        - status
+        - message
+        - timestamp
+      properties:
+        error:
+          type: boolean
+          example: true
+          description: Indica que ocurrió un error
+        status:
+          type: integer
+          example: 500
+          description: Código de estado HTTP
+        message:
+          type: string
+          example: "Error interno del servidor"
+          description: Mensaje de error para el usuario
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-09-15T22:58:19+00:00"
+          description: Timestamp del error
+        debug:
+          type: object
+          description: Información de debugging (solo en desarrollo)
+          properties:
+            exception:
+              type: string
+              example: "RuntimeException"
+            message:
+              type: string
+              example: "Database connection failed"
+            file:
+              type: string
+              example: "/path/to/file.php"
+            line:
+              type: integer
+              example: 42
+            trace:
+              type: string
+              example: "Stack trace here..."
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: string
+              example: ["Mensaje no puede estar vacío", "Mensaje demasiado largo"]
+              description: Lista de errores de validación específicos
+
+    RateLimitError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            retry_after:
+              type: integer
+              example: 60
+              description: Tiempo en segundos para el próximo intento
+            limit:
+              type: integer
+              example: 50
+              description: Límite de requests por ventana de tiempo
+            remaining:
+              type: integer
+              example: 0
+              description: Requests restantes en la ventana actual
+
+    ExternalServiceError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            service:
+              type: string
+              example: "Gemini"
+              description: Nombre del servicio externo que falló
+            service_status:
+              type: integer
+              example: 503
+              description: Código de estado del servicio externo
+
+  securitySchemes: {}
+
+tags:
+  - name: System
+    description: Endpoints de sistema y monitoreo
+  - name: Chat
+    description: Endpoints relacionados con el chatbot
+  - name: CORS
+    description: Endpoints para manejo de CORS

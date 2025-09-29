@@ -1,0 +1,28 @@
+{
+  "scripts": {
+    "prepare": "husky install",
+    "pre-commit": "lint-staged",
+    "test:all": "./scripts/test-all.sh",
+    "build:plugin": "./scripts/build-wordpress-plugin.sh",
+    "ci:test": "pnpm test && cd api && composer test",
+    "ci:build": "pnpm build && cd api && composer install --no-dev",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write . && cd api && composer format"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ],
+    "api/**/*.php": [
+      "cd api && composer format"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

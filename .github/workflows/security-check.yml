@@ -1,0 +1,64 @@
+name: Security Check & Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run security audit
+      run: |
+        npm audit --audit-level=moderate
+        if [ $? -ne 0 ]; then
+          echo "❌ SECURITY AUDIT FAILED - BLOCKING DEPLOYMENT"
+          exit 1
+        fi
+        
+    - name: Check for vulnerable packages
+      run: |
+        # Verificar esbuild
+        ESBUILD_VERSION=$(npm list esbuild --depth=0 2>/dev/null | grep esbuild | sed 's/.*@//' || echo "not-found")
+        if [[ "$ESBUILD_VERSION" != "not-found" ]] && [[ "$ESBUILD_VERSION" < "0.24.3" ]]; then
+          echo "❌ VULNERABLE esbuild version: $ESBUILD_VERSION"
+          exit 1
+        fi
+        
+        # Verificar vite
+        VITE_VERSION=$(npm list vite --depth=0 2>/dev/null | grep vite | sed 's/.*@//' || echo "not-found")
+        if [[ "$VITE_VERSION" != "not-found" ]] && [[ "$VITE_VERSION" < "6.1.7" ]]; then
+          echo "❌ VULNERABLE vite version: $VITE_VERSION"
+          exit 1
+        fi
+        
+        echo "✅ All packages are secure"
+        
+    - name: Lint code
+      run: npm run lint
+      # Los warnings no críticos (por ejemplo, Fast Refresh) pueden ser ignorados si no afectan la funcionalidad.
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Security scan summary
+      run: |
+        echo "🔒 Security Scan Complete"
+        echo "✅ No vulnerable dependencies found"
+        echo "✅ Build successful"
+        echo "🚀 Ready for deployment"

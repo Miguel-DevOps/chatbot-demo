@@ -1,0 +1,101 @@
+# =============================================================================
+# 🤖 CHATBOT DEMO - GITIGNORE
+# =============================================================================
+
+# =============================================================================
+# ENVIRONMENT & SECRETS
+# =============================================================================
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+api/.env
+
+# =============================================================================
+# NODE.JS & FRONTEND
+# =============================================================================
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# =============================================================================
+# PHP & BACKEND
+# =============================================================================
+# Composer
+/vendor/
+/api/vendor/
+composer.lock
+api/composer.lock
+
+# PHPUnit & Testing
+/api/.phpunit.result.cache
+/api/tests/results/
+
+# =============================================================================
+# DATABASES & DATA FILES
+# =============================================================================
+# SQLite databases
+*.db
+/api/src/data/*.db
+/api/src/data/rate_limit.db
+/api/data/
+
+# =============================================================================
+# LOGS & TEMPORARY FILES
+# =============================================================================
+# Log files
+logs/
+*.log
+/api/src/logs/*.log
+/api/src/logs/app.log
+
+# Temporary files
+*.tmp
+*.temp
+test-*.html
+
+# =============================================================================
+# IDE & EDITOR FILES
+# =============================================================================
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+
+# IntelliJ / PhpStorm
+.idea/
+
+# Other editors
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =============================================================================
+# OPERATING SYSTEM FILES
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~

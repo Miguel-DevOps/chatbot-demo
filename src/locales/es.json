@@ -1,0 +1,36 @@
+{
+  "chatbot": {
+    "header": "¡Hola! 👋",
+    "description": "¿En qué puedo ayudarte hoy? Elige una opción o inicia una conversación.",
+    "home": "Inicio",
+    "welcome": "Chatbot Demo",
+    "title": "Demo Chatbot",
+    "status": {
+      "online": "Conectado",
+      "offline": "Desconectado"
+    }
+  },
+  "buttons": {
+    "startChat": "Iniciar Chat",
+    "whatsapp": "Contacto por WhatsApp",
+    "faq": "Preguntas Frecuentes",
+    "schedule": "Agendar cita",
+    "send": "Enviar",
+    "home": "Inicio"
+  },
+  "messages": {
+    "placeholder": "Escribe tu consulta aquí...",
+    "thinking": "Pensando...",
+    "error": "Hubo un error. Intenta nuevamente.",
+    "reformulate": "¿Puedes reformular tu pregunta o elegir una opción de ejemplo?",
+    "welcomeChat": "Excelente. ¿En qué podemos asesorarte hoy? Estoy aquí para asistirte con información detallada sobre nuestros servicios y filosofía.",
+    "whatsappMessage": "Conéctate directamente con nuestro equipo de expertos para una atención personalizada y ágil.",
+    "faqMessage": "Accede a respuestas rápidas sobre nuestros servicios, procesos y alianzas estratégicas.",
+    "scheduleMessage": "Reserva un espacio para una consulta estratégica y personalizada con nuestros especialistas."
+  },
+  "validation": {
+    "emptyMessage": "El mensaje no puede estar vacío",
+    "tooShort": "El mensaje es muy corto",
+    "tooLong": "El mensaje es muy largo"
+  }
+}
