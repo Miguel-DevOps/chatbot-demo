@@ -10,6 +10,9 @@ use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
+use ChatbotDemo\Services\ChatService;
+use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Services\RateLimitService;
 use DI\Container;
 use DI\ContainerBuilder;
 use Monolog\Handler\NullHandler;
@@ -109,17 +112,17 @@ abstract class IntegrationTestCase extends TestCase
             },
 
             // Servicios - pueden ser sobrescritos en tests específicos
-            'ChatbotDemo\\Services\\KnowledgeBaseService' => function (AppConfig $config, LoggerInterface $logger) {
+            KnowledgeBaseService::class => function (AppConfig $config, LoggerInterface $logger) {
                 return $this->createKnowledgeBaseService($config, $logger);
             },
 
-            'ChatbotDemo\\Services\\RateLimitService' => function (AppConfig $config, LoggerInterface $logger) {
+            RateLimitService::class => function (AppConfig $config, LoggerInterface $logger) {
                 return $this->createRateLimitService($config, $logger);
             },
 
-            'ChatbotDemo\\Services\\ChatService' => function (
+            ChatService::class => function (
                 AppConfig $config,
-                $knowledgeService,
+                KnowledgeBaseService $knowledgeService,
                 LoggerInterface $logger
             ) {
                 return $this->createChatService($config, $knowledgeService, $logger);
@@ -135,8 +138,8 @@ abstract class IntegrationTestCase extends TestCase
                 return new ChatController($chatService, $rateLimitService, $config, $logger);
             },
 
-            HealthController::class => function (AppConfig $config) {
-                return new HealthController($config);
+            HealthController::class => function (AppConfig $config, LoggerInterface $logger) {
+                return new HealthController($config, $logger);
             },
 
             // Middleware
@@ -255,19 +258,19 @@ abstract class IntegrationTestCase extends TestCase
     /**
      * Factory methods para servicios - pueden ser sobrescritos en tests específicos
      */
-    protected function createKnowledgeBaseService(AppConfig $config, LoggerInterface $logger)
+    protected function createKnowledgeBaseService(AppConfig $config, LoggerInterface $logger): KnowledgeBaseService
     {
-        return new \ChatbotDemo\Services\KnowledgeBaseService($config, $logger);
+        return new KnowledgeBaseService($config, $logger);
     }
 
-    protected function createRateLimitService(AppConfig $config, LoggerInterface $logger)
+    protected function createRateLimitService(AppConfig $config, LoggerInterface $logger): RateLimitService
     {
-        return new \ChatbotDemo\Services\RateLimitService($config, $logger);
+        return new RateLimitService($config, $logger);
     }
 
-    protected function createChatService(AppConfig $config, $knowledgeService, LoggerInterface $logger)
+    protected function createChatService(AppConfig $config, KnowledgeBaseService $knowledgeService, LoggerInterface $logger): ChatService
     {
-        return new \ChatbotDemo\Services\ChatService($config, $knowledgeService, $logger);
+        return new ChatService($config, $knowledgeService, $logger);
     }
 
     /**

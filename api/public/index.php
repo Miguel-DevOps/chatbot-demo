@@ -78,8 +78,8 @@ try {
             'status' => 'running',
             'environment' => $config->get('app.environment'),
             'endpoints' => [
-                'POST /chat.php' => 'Chat with AI',
-                'GET /health.php' => 'Health check',
+                'POST /chat' => 'Chat with AI',
+                'GET /health' => 'Health check',
                 'GET /' => 'API information'
             ],
             'timestamp' => date('c')
@@ -110,8 +110,8 @@ try {
             'requested_path' => $requestedPath,
             'available_endpoints' => [
                 'GET /' => 'API information',
-                'POST /chat.php' => 'Chat endpoint',
-                'GET /health.php' => 'Health check'
+                'POST /chat' => 'Chat endpoint',
+                'GET /health' => 'Health check'
             ]
         ];
         

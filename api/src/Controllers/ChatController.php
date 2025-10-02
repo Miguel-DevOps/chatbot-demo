@@ -77,15 +77,33 @@ class ChatController
             }
 
             // Obtener y validar datos de entrada
-            $body = $request->getBody()->getContents();
-            $data = json_decode($body, true);
-
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->logger->warning('Invalid JSON in request', [
-                    'request_id' => $requestId,
-                    'json_error' => json_last_error_msg(),
-                    'body_preview' => substr($body, 0, 100)
-                ]);
+            $data = $request->getParsedBody();
+            
+            // Fallback a parsing manual si el middleware no procesó el JSON
+            if ($data === null) {
+                $body = $request->getBody()->getContents();
+                
+                // Debug para testing
+                if ($this->config->isDevelopment()) {
+                    $this->logger->debug('Raw request body', [
+                        'body' => $body,
+                        'length' => strlen($body)
+                    ]);
+                }
+                
+                $data = json_decode($body, true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $this->logger->warning('Invalid JSON in request', [
+                        'request_id' => $requestId,
+                        'json_error' => json_last_error_msg(),
+                        'body_preview' => substr($body, 0, 100)
+                    ]);
+                    return $this->errorResponse($response, 'JSON inválido', 400);
+                }
+            }
+            
+            if (!is_array($data)) {
                 return $this->errorResponse($response, 'JSON inválido', 400);
             }
 

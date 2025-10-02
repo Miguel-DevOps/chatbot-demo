@@ -11,21 +11,24 @@ use Slim\Psr7\Stream;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Config\AppConfig;
+use Psr\Log\LoggerInterface;
 
 class HealthControllerTest extends TestCase
 {
     private HealthController $healthController;
     private $mockConfig;
+    private $mockLogger;
 
     protected function setUp(): void
     {
         parent::setUp();
         
-        // Mock de configuración
+        // Mock de configuración y logger
         $this->mockConfig = Mockery::mock(AppConfig::class);
+        $this->mockLogger = Mockery::mock(LoggerInterface::class);
         
         // Crear instancia del HealthController con dependencias mockeadas
-        $this->healthController = new HealthController($this->mockConfig);
+        $this->healthController = new HealthController($this->mockConfig, $this->mockLogger);
     }
 
     protected function tearDown(): void

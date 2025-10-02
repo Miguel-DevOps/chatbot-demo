@@ -6,6 +6,7 @@ namespace ChatbotDemo\Tests\Integration;
 
 use ChatbotDemo\Config\AppConfig;
 use ChatbotDemo\Services\ChatService;
+use ChatbotDemo\Services\KnowledgeBaseService;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -32,7 +33,7 @@ class ChatEndpointTest extends IntegrationTestCase
     /**
      * Override del factory method para inyectar el mock
      */
-    protected function createChatService(AppConfig $config, $knowledgeService, LoggerInterface $logger)
+    protected function createChatService(AppConfig $config, KnowledgeBaseService $knowledgeService, LoggerInterface $logger): ChatService
     {
         return $this->mockChatService;
     }

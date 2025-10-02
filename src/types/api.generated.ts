@@ -44,26 +44,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/health.php": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Health Check (legacy endpoint)
-         * @description Endpoint de compatibilidad para verificar el estado de la API
-         */
-        get: operations["getHealthLegacy"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/chat": {
         parameters: {
             query?: never;
@@ -80,30 +60,6 @@ export interface paths {
         post: operations["sendChatMessage"];
         delete?: never;
         options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/chat.php": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Enviar mensaje al chatbot (legacy endpoint)
-         * @description Endpoint de compatibilidad para procesar mensajes del chatbot
-         */
-        post: operations["sendChatMessageLegacy"];
-        delete?: never;
-        /**
-         * CORS preflight para chat
-         * @description Maneja preflight requests para CORS
-         */
-        options: operations["chatOptions"];
         head?: never;
         patch?: never;
         trace?: never;
@@ -137,9 +93,9 @@ export interface components {
             /** @description Endpoints disponibles */
             endpoints: {
                 /** @example Chat with AI */
-                "POST /chat.php"?: string;
+                "POST /chat"?: string;
                 /** @example Health check */
-                "GET /health.php"?: string;
+                "GET /health"?: string;
                 /** @example API information */
                 "GET /"?: string;
             };
@@ -411,26 +367,6 @@ export interface operations {
             };
         };
     };
-    getHealthLegacy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Estado de la API */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthResponse"];
-                };
-            };
-        };
-    };
     sendChatMessage: {
         parameters: {
             query?: never;
@@ -490,48 +426,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ExternalServiceError"];
                 };
-            };
-        };
-    };
-    sendChatMessageLegacy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChatRequest"];
-            };
-        };
-        responses: {
-            /** @description Respuesta del chatbot */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ChatResponse"];
-                };
-            };
-        };
-    };
-    chatOptions: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description CORS headers aplicados */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

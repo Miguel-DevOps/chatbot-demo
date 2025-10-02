@@ -13,9 +13,8 @@ export const API_CONFIG: Record<string, ApiConfig> = {
     baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10),
     endpoints: {
-      chat: '/chat.php',
-      health: '/health.php',
-      knowledgeBase: '/knowledge-base.php'
+      chat: '/chat',
+      health: '/health'
     }
   },
   // Para producción
@@ -23,9 +22,8 @@ export const API_CONFIG: Record<string, ApiConfig> = {
     baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://examplesite.com/api',
     timeout: parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10),
     endpoints: {
-      chat: '/chat.php',
-      health: '/health.php',
-      knowledgeBase: '/knowledge-base.php'
+      chat: '/chat',
+      health: '/health'
     }
   }
 };

@@ -53,21 +53,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ApiError'
 
-  /health.php:
-    get:
-      summary: Health Check (legacy endpoint)
-      description: Endpoint de compatibilidad para verificar el estado de la API
-      operationId: getHealthLegacy
-      tags:
-        - System
-      responses:
-        '200':
-          description: Estado de la API
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthResponse'
-
   /chat:
     post:
       summary: Enviar mensaje al chatbot
@@ -128,36 +113,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExternalServiceError'
 
-  /chat.php:
-    post:
-      summary: Enviar mensaje al chatbot (legacy endpoint)
-      description: Endpoint de compatibilidad para procesar mensajes del chatbot
-      operationId: sendChatMessageLegacy
-      tags:
-        - Chat
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChatRequest'
-      responses:
-        '200':
-          description: Respuesta del chatbot
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ChatResponse'
 
-    options:
-      summary: CORS preflight para chat
-      description: Maneja preflight requests para CORS
-      operationId: chatOptions
-      tags:
-        - CORS
-      responses:
-        '200':
-          description: CORS headers aplicados
 
 components:
   schemas:
@@ -191,10 +147,10 @@ components:
         endpoints:
           type: object
           properties:
-            "POST /chat.php":
+            "POST /chat":
               type: string
               example: "Chat with AI"
-            "GET /health.php":
+            "GET /health":
               type: string
               example: "Health check"
             "GET /":
@@ -445,5 +401,3 @@ tags:
     description: Endpoints de sistema y monitoreo
   - name: Chat
     description: Endpoints relacionados con el chatbot
-  - name: CORS
-    description: Endpoints para manejo de CORS

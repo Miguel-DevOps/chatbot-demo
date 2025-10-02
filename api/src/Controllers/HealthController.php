@@ -7,6 +7,7 @@ namespace ChatbotDemo\Controllers;
 use ChatbotDemo\Config\AppConfig;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Controlador de Health Check
@@ -15,10 +16,12 @@ use Psr\Http\Message\ServerRequestInterface;
 class HealthController
 {
     private AppConfig $config;
+    private LoggerInterface $logger;
 
-    public function __construct(AppConfig $config)
+    public function __construct(AppConfig $config, LoggerInterface $logger)
     {
         $this->config = $config;
+        $this->logger = $logger;
     }
 
     public function health(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
