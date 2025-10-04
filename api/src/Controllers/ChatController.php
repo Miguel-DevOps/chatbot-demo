@@ -14,8 +14,8 @@ use Slim\Psr7\Response;
 use RuntimeException;
 
 /**
- * Controlador del Chat
- * Maneja las peticiones HTTP relacionadas con el chat
+ * Chat Controller
+ * Handles HTTP requests related to chat
  */
 class ChatController
 {
@@ -49,7 +49,7 @@ class ChatController
         ]);
 
         try {
-            // Validar método HTTP
+            // Validate HTTP method
             if ($request->getMethod() !== 'POST') {
                 $this->logger->warning('Invalid HTTP method', [
                     'request_id' => $requestId,
@@ -58,7 +58,7 @@ class ChatController
                 return $this->errorResponse($response, 'Método no permitido', 405);
             }
 
-            // Verificar rate limit
+            // Check rate limit
             $rateLimitResult = $this->rateLimitService->checkRateLimit($request);
             
             if (!$rateLimitResult['allowed']) {
@@ -76,14 +76,14 @@ class ChatController
                     ->withHeader('Retry-After', (string) $rateLimitResult['retry_after']);
             }
 
-            // Obtener y validar datos de entrada
+            // Obtain and validate input data
             $data = $request->getParsedBody();
-            
-            // Fallback a parsing manual si el middleware no procesó el JSON
+
+            // Fallback to manual parsing if middleware did not process JSON
             if ($data === null) {
                 $body = $request->getBody()->getContents();
-                
-                // Debug para testing
+
+                // Debug for testing
                 if ($this->config->isDevelopment()) {
                     $this->logger->debug('Raw request body', [
                         'body' => $body,
@@ -115,7 +115,7 @@ class ChatController
                 return $this->errorResponse($response, 'Campo "message" requerido', 400);
             }
 
-            // Procesar mensaje
+            // Process message
             $result = $this->chatService->processMessage($data['message']);
             
             $processingTime = round((microtime(true) - $startTime) * 1000, 2);
@@ -126,7 +126,7 @@ class ChatController
                 'response_mode' => $result['mode'] ?? 'unknown'
             ]);
 
-            // Añadir headers de rate limit a la respuesta exitosa
+            // Add rate limit headers to successful response
             $successResponse = $this->successResponse($response, $result);
             return $successResponse
                 ->withHeader('X-RateLimit-Limit', (string) $rateLimitResult['limit'])
@@ -165,7 +165,7 @@ class ChatController
 
     public function options(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
-        // Manejar preflight CORS
+        // Handle preflight CORS
         $this->logger->debug('CORS preflight request handled', [
             'origin' => $request->getHeaderLine('Origin'),
             'method' => $request->getHeaderLine('Access-Control-Request-Method')

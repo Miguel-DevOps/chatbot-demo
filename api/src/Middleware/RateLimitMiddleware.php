@@ -13,8 +13,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Response;
 
 /**
- * Middleware de Rate Limiting
- * Protege la API contra abuso y ataques DDoS
+ * Rate Limiting Middleware
+ * Protects the API against abuse and DDoS attacks
  */
 class RateLimitMiddleware implements MiddlewareInterface
 {
@@ -29,10 +29,10 @@ class RateLimitMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Verificar rate limiting
+        // Check rate limiting
         $rateLimitInfo = $this->rateLimitService->checkRateLimit($request);
-        
-        // Crear respuesta con headers de rate limiting
+
+        // Create response with rate limiting headers
         $response = $handler->handle($request);
         
         $response = $response
@@ -40,7 +40,7 @@ class RateLimitMiddleware implements MiddlewareInterface
             ->withHeader('X-RateLimit-Remaining', (string) $rateLimitInfo['remaining'])
             ->withHeader('X-RateLimit-Reset', (string) $rateLimitInfo['reset']);
 
-        // Si excede el límite, devolver 429
+        // If exceeded the limit, return 429
         if (!$rateLimitInfo['allowed']) {
             $response = new Response();
             $response = $response

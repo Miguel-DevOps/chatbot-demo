@@ -8,8 +8,8 @@ use Dotenv\Dotenv;
 use RuntimeException;
 
 /**
- * Configuración centralizada de la aplicación
- * Siguiendo el patrón de configuración de 12-Factor App
+ * Centralized application configuration
+ * Following the 12-Factor App configuration pattern
  */
 class AppConfig
 {
@@ -63,7 +63,7 @@ class AppConfig
                 'database_path' => dirname(__DIR__, 1) . '/data/rate_limit.db'
             ],
             'knowledge_base' => [
-                'path' => dirname(__DIR__, 1) . '/knowledge',
+                'path' => dirname(__DIR__, 2) . '/knowledge',
                 'cache_enabled' => true,
                 'cache_ttl' => 3600 // 1 hora
             ],
@@ -129,7 +129,7 @@ class AppConfig
     }
 
     /**
-     * Crear instancia de configuración desde array (para testing)
+     * Create configuration instance from array (for testing)
      */
     public static function createFromArray(array $config): AppConfig
     {
@@ -139,7 +139,7 @@ class AppConfig
     }
 
     /**
-     * Obtener toda la configuración como array (para testing)
+     * Obtain entire configuration as array (for testing)
      */
     public function toArray(): array
     {
@@ -147,7 +147,7 @@ class AppConfig
     }
 
     /**
-     * Reset del singleton (para testing)
+     * Reset singleton instance (for testing)
      */
     public static function reset(): void
     {

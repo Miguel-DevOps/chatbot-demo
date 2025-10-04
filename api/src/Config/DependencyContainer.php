@@ -8,7 +8,13 @@ use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
+use ChatbotDemo\Repositories\RateLimitStorageInterface;
+use ChatbotDemo\Repositories\SqliteRateLimitStorage;
+use ChatbotDemo\Repositories\KnowledgeProviderInterface;
+use ChatbotDemo\Repositories\FilesystemKnowledgeProvider;
 use ChatbotDemo\Services\ChatService;
+use ChatbotDemo\Services\GenerativeAiClientInterface;
+use ChatbotDemo\Services\GeminiApiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Services\RateLimitService;
 use DI\Container;
@@ -69,21 +75,43 @@ class DependencyContainer
                 return $logger;
             },
 
-            // Services with automatic dependency injection
-            KnowledgeBaseService::class => function (AppConfig $config, LoggerInterface $logger) {
-                return new KnowledgeBaseService($config, $logger);
+            // AI Client abstraction
+            GenerativeAiClientInterface::class => function (AppConfig $config, LoggerInterface $logger) {
+                return new GeminiApiClient($config, $logger);
             },
 
-            RateLimitService::class => function (AppConfig $config, LoggerInterface $logger) {
-                return new RateLimitService($config, $logger);
+            // Services with automatic dependency injection
+            KnowledgeProviderInterface::class => function (AppConfig $config, LoggerInterface $logger) {
+                return new FilesystemKnowledgeProvider($config, $logger);
+            },
+
+            KnowledgeBaseService::class => function (
+                AppConfig $config, 
+                LoggerInterface $logger,
+                KnowledgeProviderInterface $knowledgeProvider
+            ) {
+                return new KnowledgeBaseService($config, $logger, $knowledgeProvider);
+            },
+
+            // Rate Limiting Storage abstraction
+            RateLimitStorageInterface::class => function (AppConfig $config, LoggerInterface $logger) {
+                return new SqliteRateLimitStorage($config, $logger);
+            },
+
+            RateLimitService::class => function (
+                AppConfig $config, 
+                LoggerInterface $logger,
+                RateLimitStorageInterface $storage
+            ) {
+                return new RateLimitService($config, $logger, $storage);
             },
 
             ChatService::class => function (
-                AppConfig $config, 
+                GenerativeAiClientInterface $aiClient,
                 KnowledgeBaseService $knowledgeService, 
                 LoggerInterface $logger
             ) {
-                return new ChatService($config, $knowledgeService, $logger);
+                return new ChatService($aiClient, $knowledgeService, $logger);
             },
 
             // Controllers with automatic dependency injection
@@ -96,8 +124,12 @@ class DependencyContainer
                 return new ChatController($chatService, $rateLimitService, $config, $logger);
             },
 
-            HealthController::class => function (AppConfig $config, LoggerInterface $logger) {
-                return new HealthController($config, $logger);
+            HealthController::class => function (
+                AppConfig $config, 
+                LoggerInterface $logger,
+                RateLimitService $rateLimitService
+            ) {
+                return new HealthController($config, $logger, $rateLimitService);
             },
 
             // Middleware

@@ -59,16 +59,23 @@ try {
     $app->add($container->get(CorsMiddleware::class));
 
     // Routes - Controllers are automatically resolved from DI container
+    // Legacy routes (backward compatibility)
     $app->get('/health.php', [HealthController::class, 'health']);
     $app->get('/health', [HealthController::class, 'health']);
-    
     $app->post('/chat.php', [ChatController::class, 'chat']);
     $app->post('/chat', [ChatController::class, 'chat']);
     
+    // API v1 routes
+    $app->get('/api/v1/health', [HealthController::class, 'health']);
+    $app->post('/api/v1/chat', [ChatController::class, 'chat']);
+    
+    // OPTIONS for CORS
     $app->options('/chat.php', [ChatController::class, 'options']);
     $app->options('/chat', [ChatController::class, 'options']);
     $app->options('/health.php', [ChatController::class, 'options']);
     $app->options('/health', [ChatController::class, 'options']);
+    $app->options('/api/v1/chat', [ChatController::class, 'options']);
+    $app->options('/api/v1/health', [ChatController::class, 'options']);
 
     // Root route with API information
     $app->get('/', function (Request $request, Response $response) use ($config, $logger) {
@@ -78,8 +85,10 @@ try {
             'status' => 'running',
             'environment' => $config->get('app.environment'),
             'endpoints' => [
-                'POST /chat' => 'Chat with AI',
-                'GET /health' => 'Health check',
+                'POST /api/v1/chat' => 'Chat with AI',
+                'POST /chat' => 'Chat with AI (legacy)',
+                'GET /api/v1/health' => 'Health check',
+                'GET /health' => 'Health check (legacy)',
                 'GET /' => 'API information'
             ],
             'timestamp' => date('c')
@@ -110,8 +119,10 @@ try {
             'requested_path' => $requestedPath,
             'available_endpoints' => [
                 'GET /' => 'API information',
-                'POST /chat' => 'Chat endpoint',
-                'GET /health' => 'Health check'
+                'POST /api/v1/chat' => 'Chat endpoint',
+                'POST /chat' => 'Chat endpoint (legacy)',
+                'GET /api/v1/health' => 'Health check',
+                'GET /health' => 'Health check (legacy)'
             ]
         ];
         

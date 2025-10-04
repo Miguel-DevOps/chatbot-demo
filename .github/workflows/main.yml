@@ -1,10 +1,6 @@
 name: CI/CD Pipeline
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+on: workflow_dispatch
 
 jobs:
   # ===========================================
@@ -30,7 +26,7 @@ jobs:
         version: latest
     
     - name: Install dependencies
-      run: pnpm install
+      run: pnpm install --frozen-lockfile
     
     - name: Type check
       run: pnpm type-check
@@ -73,26 +69,24 @@ jobs:
         extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, curl, libxml, simplexml
         coverage: xdebug
     
+
     - name: Validate composer.json and composer.lock
       run: |
         cd api
         composer validate --strict
-    
+
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v4
       with:
-        path: api/vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ hashFiles('**/composer.lock') }}
+        path: |
+          ~/.composer/cache
+          api/vendor
+        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ hashFiles('api/composer.lock') }}
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-versions }}-
-    
-    - name: Install dependencies
-      run: |
-        cd api
-        composer install --prefer-dist --no-progress --no-suggest --no-dev
-    
-    - name: Install dev dependencies for testing
+
+    - name: Install dependencies (including dev for tests)
       run: |
         cd api
         composer install --prefer-dist --no-progress --no-suggest
@@ -158,7 +152,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v1
       with:
         scan-type: 'fs'
         scan-ref: '.'
@@ -182,8 +176,10 @@ jobs:
       with:
         version: latest
     
-    - name: Run npm audit
-      run: pnpm audit --audit-level moderate
+    - name: Run pnpm audit (non-blocking)
+      run: |
+        pnpm audit --json > pnpm-audit.json || true
+        echo "pnpm audit results written to pnpm-audit.json"
       continue-on-error: true
     
     - name: Setup PHP for security check

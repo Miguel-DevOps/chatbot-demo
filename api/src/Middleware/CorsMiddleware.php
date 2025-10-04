@@ -12,8 +12,8 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
- * Middleware de CORS
- * Maneja las políticas de Cross-Origin Resource Sharing
+ * CORS middleware
+ * Handles Cross-Origin Resource Sharing policies
  */
 class CorsMiddleware implements MiddlewareInterface
 {
@@ -45,7 +45,7 @@ class CorsMiddleware implements MiddlewareInterface
         $allowedMethods = $this->config->get('cors.allowed_methods', ['GET', 'POST', 'OPTIONS']);
         $allowedHeaders = $this->config->get('cors.allowed_headers', ['Content-Type']);
 
-        // Determinar origin permitido
+        // Determine allowed origin
         $allowedOrigin = '*';
         $originAllowed = true;
         

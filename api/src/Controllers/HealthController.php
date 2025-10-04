@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ChatbotDemo\Controllers;
 
 use ChatbotDemo\Config\AppConfig;
+use ChatbotDemo\Services\RateLimitService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -17,11 +18,16 @@ class HealthController
 {
     private AppConfig $config;
     private LoggerInterface $logger;
+    private RateLimitService $rateLimitService;
 
-    public function __construct(AppConfig $config, LoggerInterface $logger)
-    {
+    public function __construct(
+        AppConfig $config, 
+        LoggerInterface $logger,
+        RateLimitService $rateLimitService
+    ) {
         $this->config = $config;
         $this->logger = $logger;
+        $this->rateLimitService = $rateLimitService;
     }
 
     public function health(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
@@ -44,6 +50,7 @@ class HealthController
             'uptime' => $this->getUptime(),
             'checks' => [
                 'database' => $this->checkDatabase(),
+                'rate_limit_storage' => $this->checkRateLimitStorage(),
                 'knowledge_base' => $this->checkKnowledgeBase(),
                 'api_key' => $this->checkApiKey()
             ]
@@ -57,6 +64,26 @@ class HealthController
     {
         $uptime = time() - $_SERVER['REQUEST_TIME'];
         return gmdate('H:i:s', $uptime);
+    }
+
+    private function checkRateLimitStorage(): array
+    {
+        try {
+            $isHealthy = $this->rateLimitService->getStorageHealth();
+            $stats = $this->rateLimitService->getStorageStats();
+            
+            return [
+                'status' => $isHealthy ? 'ok' : 'error',
+                'healthy' => $isHealthy,
+                'stats' => $stats
+            ];
+        } catch (\Exception $e) {
+            return [
+                'status' => 'error',
+                'healthy' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 
     private function checkDatabase(): array

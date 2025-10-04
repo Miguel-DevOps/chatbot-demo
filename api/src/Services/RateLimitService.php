@@ -6,61 +6,32 @@ namespace ChatbotDemo\Services;
 
 use ChatbotDemo\Config\AppConfig;
 use ChatbotDemo\Exceptions\RateLimitException;
+use ChatbotDemo\Repositories\RateLimitStorageInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
-use PDO;
-use PDOException;
 
 /**
- * Servicio de Rate Limiting
- * Implementa rate limiting robusto basado en IP con SQLite
+ * Rate Limiting Service
+ * Implements robust IP-based rate limiting using storage abstraction
+ *
+ * This implementation follows the dependency inversion principle,
+ * allowing easy swapping between different storage systems
+ * (SQLite, Redis, MySQL, etc.) without modifying business logic.
  */
 class RateLimitService
 {
     private AppConfig $config;
     private LoggerInterface $logger;
-    private ?PDO $pdo = null;
+    private RateLimitStorageInterface $storage;
 
-    public function __construct(AppConfig $config, LoggerInterface $logger)
-    {
+    public function __construct(
+        AppConfig $config, 
+        LoggerInterface $logger,
+        RateLimitStorageInterface $storage
+    ) {
         $this->config = $config;
         $this->logger = $logger;
-        $this->initializeDatabase();
-    }
-
-    private function initializeDatabase(): void
-    {
-        $dbPath = $this->config->get('rate_limit.database_path');
-        $dataDir = dirname($dbPath);
-        
-        if (!is_dir($dataDir)) {
-            mkdir($dataDir, 0755, true);
-            $this->logger->info('Created rate limit database directory', ['path' => $dataDir]);
-        }
-
-        try {
-            $this->pdo = new PDO("sqlite:" . $dbPath);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            
-            $sql = "CREATE TABLE IF NOT EXISTS rate_limits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ip_address TEXT NOT NULL,
-                request_time INTEGER NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )";
-            $this->pdo->exec($sql);
-            
-            $sql = "CREATE INDEX IF NOT EXISTS idx_ip_time ON rate_limits(ip_address, request_time)";
-            $this->pdo->exec($sql);
-            
-            $this->logger->info('Rate limit database initialized successfully', ['path' => $dbPath]);
-            
-        } catch (PDOException $e) {
-            $this->logger->error('Failed to initialize rate limit database', [
-                'error' => $e->getMessage(),
-                'path' => $dbPath
-            ]);
-        }
+        $this->storage = $storage;
     }
 
     public function checkRateLimit(ServerRequestInterface $request): array
@@ -71,63 +42,14 @@ class RateLimitService
         $maxRequests = $this->config->get('rate_limit.max_requests');
         $windowStart = $currentTime - $timeWindow;
 
-        try {
-            // Limpiar requests antiguos
-            $stmt = $this->pdo->prepare("DELETE FROM rate_limits WHERE request_time < ?");
-            $stmt->execute([$windowStart]);
-
-            // Contar requests actuales
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) as count FROM rate_limits WHERE ip_address = ? AND request_time >= ?");
-            $stmt->execute([$ip, $windowStart]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            $currentRequests = $result['count'] ?? 0;
-            $remaining = max(0, $maxRequests - $currentRequests);
-            $allowed = $currentRequests < $maxRequests;
-
-            $this->logger->debug('Rate limit check', [
+        // Check storage status
+        if (!$this->storage->isHealthy()) {
+            $this->logger->warning('Rate limit storage is unhealthy, failing open', [
                 'ip' => $ip,
-                'current_requests' => $currentRequests,
-                'max_requests' => $maxRequests,
-                'remaining' => $remaining,
-                'allowed' => $allowed,
-                'time_window' => $timeWindow
-            ]);
-
-            // Si está permitido, registrar el request
-            if ($allowed) {
-                $stmt = $this->pdo->prepare("INSERT INTO rate_limits (ip_address, request_time) VALUES (?, ?)");
-                $stmt->execute([$ip, $currentTime]);
-                $remaining = max(0, $remaining - 1);
-                
-                $this->logger->info('Request allowed', [
-                    'ip' => $ip,
-                    'remaining' => $remaining
-                ]);
-            } else {
-                $this->logger->warning('Rate limit exceeded', [
-                    'ip' => $ip,
-                    'current_requests' => $currentRequests,
-                    'max_requests' => $maxRequests,
-                    'time_window' => $timeWindow
-                ]);
-            }
-
-            return [
-                'allowed' => $allowed,
-                'limit' => $maxRequests,
-                'remaining' => $remaining,
-                'reset' => $currentTime + $timeWindow,
-                'retry_after' => $timeWindow
-            ];
-
-        } catch (PDOException $e) {
-            $this->logger->error('Rate limiting database error', [
-                'error' => $e->getMessage(),
-                'ip' => $ip
+                'storage_stats' => $this->storage->getStats()
             ]);
             
-            // Fail-open: permitir el request si hay error
+            // Fail-open: allow the request if storage fails
             return [
                 'allowed' => true,
                 'limit' => $maxRequests,
@@ -136,6 +58,55 @@ class RateLimitService
                 'retry_after' => 0
             ];
         }
+
+        // Clean up old requests
+        $cleanedCount = $this->storage->cleanupExpiredRequests($windowStart);
+        if ($cleanedCount > 0) {
+            $this->logger->debug('Cleaned up expired rate limit records', [
+                'cleaned_count' => $cleanedCount,
+                'window_start' => $windowStart
+            ]);
+        }
+
+        // Count current requests
+        $currentRequests = $this->storage->getRequestsCount($ip, $windowStart);
+        $remaining = max(0, $maxRequests - $currentRequests);
+        $allowed = $currentRequests < $maxRequests;
+
+        $this->logger->debug('Rate limit check', [
+            'ip' => $ip,
+            'current_requests' => $currentRequests,
+            'max_requests' => $maxRequests,
+            'remaining' => $remaining,
+            'allowed' => $allowed,
+            'time_window' => $timeWindow
+        ]);
+
+        // If allowed, log the request
+        if ($allowed) {
+            $this->storage->logRequest($ip, $currentTime);
+            $remaining = max(0, $remaining - 1);
+            
+            $this->logger->info('Request allowed', [
+                'ip' => $ip,
+                'remaining' => $remaining
+            ]);
+        } else {
+            $this->logger->warning('Rate limit exceeded', [
+                'ip' => $ip,
+                'current_requests' => $currentRequests,
+                'max_requests' => $maxRequests,
+                'time_window' => $timeWindow
+            ]);
+        }
+
+        return [
+            'allowed' => $allowed,
+            'limit' => $maxRequests,
+            'remaining' => $remaining,
+            'reset' => $currentTime + $timeWindow,
+            'retry_after' => $timeWindow
+        ];
     }
 
     public function enforceRateLimit(ServerRequestInterface $request): void
@@ -158,11 +129,35 @@ class RateLimitService
         }
     }
 
+    /**
+     * Get the status of rate limiting storage
+     */
+    public function getStorageHealth(): bool
+    {
+        return $this->storage->isHealthy();
+    }
+
+    /**
+     * Get statistics from storage
+     */
+    public function getStorageStats(): array
+    {
+        return $this->storage->getStats();
+    }
+
+    /**
+     * Obtain the storage instance (useful for testing or special cases)
+     */
+    public function getStorage(): RateLimitStorageInterface
+    {
+        return $this->storage;
+    }
+
     private function getClientIP(ServerRequestInterface $request): string
     {
         $serverParams = $request->getServerParams();
-        
-        // Headers de proxies/balanceadores
+
+        // Proxy/load balancer headers
         $headers = [
             'HTTP_X_FORWARDED_FOR',
             'HTTP_X_REAL_IP',

@@ -1,6 +1,6 @@
 <?php
-// Base de conocimiento del chatbot demo
-// Edita este archivo para modificar la información que responde el asistente
+// Chatbot demo knowledge base
+// Edit this file to modify the information provided by the wizard.
 
 return "Actúa como un asistente virtual experto de [NOMBRE_EMPRESA], una empresa premium especializada en [NICHO_O_AREA_DE_TRABAJO] con proyección internacional.
 INFORMACIÓN FICTICIA DEL CHATBOT DEMO:

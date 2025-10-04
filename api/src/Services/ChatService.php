@@ -4,25 +4,26 @@ declare(strict_types=1);
 
 namespace ChatbotDemo\Services;
 
-use ChatbotDemo\Config\AppConfig;
-use ChatbotDemo\Exceptions\ExternalServiceException;
 use ChatbotDemo\Exceptions\ValidationException;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
- * Servicio de Chat con Gemini AI
- * Maneja la comunicación con la API de Google Gemini
+ * Chat Service
+ * Handles chat message processing using generative AI providers
+ * This service is provider-agnostic thanks to the GenerativeAiClientInterface abstraction
  */
 class ChatService
 {
-    private AppConfig $config;
+    private GenerativeAiClientInterface $aiClient;
     private KnowledgeBaseService $knowledgeService;
     private LoggerInterface $logger;
 
-    public function __construct(AppConfig $config, KnowledgeBaseService $knowledgeService, LoggerInterface $logger)
-    {
-        $this->config = $config;
+    public function __construct(
+        GenerativeAiClientInterface $aiClient,
+        KnowledgeBaseService $knowledgeService,
+        LoggerInterface $logger
+    ) {
+        $this->aiClient = $aiClient;
         $this->knowledgeService = $knowledgeService;
         $this->logger = $logger;
     }
@@ -33,34 +34,33 @@ class ChatService
         
         $this->logger->info('Processing chat message', [
             'message_length' => strlen($userMessage),
-            'message_preview' => substr($userMessage, 0, 100) . (strlen($userMessage) > 100 ? '...' : '')
+            'message_preview' => substr($userMessage, 0, 100) . (strlen($userMessage) > 100 ? '...' : ''),
+            'ai_provider' => $this->aiClient->getProviderName()
         ]);
 
         try {
-            // Validar mensaje
+            // Validate message
             $this->validateMessage($userMessage);
-            
-            // Obtener API key
-            $apiKey = $this->config->getGeminiApiKey();
-            
-            // Si está en modo demo, devolver respuesta de prueba
-            if ($apiKey === 'DEMO_MODE') {
-                $this->logger->info('Returning demo response');
+
+            // Check if AI client is available
+            if (!$this->aiClient->isAvailable()) {
+                $this->logger->warning('AI client is not available');
                 return [
-                    'success' => true,
-                    'response' => 'Respuesta de prueba: el chatbot está funcionando correctamente. (Modo Demo)',
+                    'success' => false,
+                    'response' => 'AI service is temporarily unavailable. Please try again later.',
                     'timestamp' => date('c'),
-                    'mode' => 'demo'
+                    'mode' => 'error'
                 ];
             }
 
-            // Procesar con Gemini AI
-            $result = $this->callGeminiAPI($userMessage, $apiKey);
+            // Process with AI provider
+            $result = $this->processWithAI($userMessage);
             
             $processingTime = round((microtime(true) - $startTime) * 1000, 2);
             $this->logger->info('Chat message processed successfully', [
                 'processing_time_ms' => $processingTime,
-                'response_length' => strlen($result['response'])
+                'response_length' => strlen($result['response']),
+                'ai_provider' => $this->aiClient->getProviderName()
             ]);
             
             return $result;
@@ -70,7 +70,8 @@ class ChatService
             $this->logger->error('Failed to process chat message', [
                 'processing_time_ms' => $processingTime,
                 'error' => $e->getMessage(),
-                'exception_type' => get_class($e)
+                'exception_type' => get_class($e),
+                'ai_provider' => $this->aiClient->getProviderName()
             ]);
             throw $e;
         }
@@ -81,20 +82,20 @@ class ChatService
         $errors = [];
         
         if (empty(trim($message))) {
-            $errors[] = 'Mensaje no puede estar vacío';
+            $errors[] = 'Message cannot be empty';
         }
 
-        if (strlen($message) > 1000) {
-            $errors[] = 'Mensaje demasiado largo (máximo 1000 caracteres)';
+        if (strlen($message) > 500) {
+            $errors[] = 'Message too long (maximum 500 characters)';
         }
 
-        // Validación adicional para contenido inapropiado (básico)
+        // Additional validation for inappropriate content (basic)
         $forbiddenWords = ['spam', 'hack', 'exploit'];
         $messageLower = strtolower($message);
         
         foreach ($forbiddenWords as $word) {
             if (strpos($messageLower, $word) !== false) {
-                $errors[] = 'Contenido no permitido detectado';
+                $errors[] = 'Forbidden content detected';
                 break;
             }
         }
@@ -104,7 +105,7 @@ class ChatService
                 'errors' => $errors,
                 'message_length' => strlen($message)
             ]);
-            throw new ValidationException('Mensaje no válido', $errors);
+            throw new ValidationException('Invalid message', $errors);
         }
 
         $this->logger->debug('Message validation passed', [
@@ -112,120 +113,35 @@ class ChatService
         ]);
     }
 
-    private function callGeminiAPI(string $userMessage, string $apiKey): array
+    private function processWithAI(string $userMessage): array
     {
-        $this->logger->info('Calling Gemini API');
-        
         try {
-            // Obtener knowledge base
+            // Get knowledge base and prepare full prompt
             $knowledge = $this->knowledgeService->getKnowledgeBase();
             $fullPrompt = $this->knowledgeService->addUserContext($knowledge, $userMessage);
 
-            $this->logger->debug('Prepared prompt for Gemini', [
+            $this->logger->debug('Prepared prompt for AI', [
                 'knowledge_base_length' => strlen($knowledge),
-                'full_prompt_length' => strlen($fullPrompt)
+                'full_prompt_length' => strlen($fullPrompt),
+                'ai_provider' => $this->aiClient->getProviderName()
             ]);
 
-            // Preparar datos para Gemini
-            $requestData = [
-                'contents' => [[
-                    'parts' => [[
-                        'text' => $fullPrompt
-                    ]]
-                ]],
-                'generationConfig' => [
-                    'temperature' => $this->config->get('gemini.temperature', 0.7),
-                    'topK' => 1,
-                    'topP' => 1,
-                    'maxOutputTokens' => $this->config->get('gemini.max_tokens', 2048)
-                ]
-            ];
-
-            // Configurar cURL
-            $ch = curl_init();
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/{$this->config->get('gemini.model')}:generateContent?key=" . $apiKey;
-            $timeout = $this->config->get('gemini.timeout', 30);
-            
-            curl_setopt_array($ch, [
-                CURLOPT_URL => $url,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => json_encode($requestData),
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'User-Agent: ChatBot-Demo/2.0'
-                ],
-                CURLOPT_TIMEOUT => $timeout,
-                CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_FOLLOWLOCATION => true
-            ]);
-
-            $apiStartTime = microtime(true);
-            $response = curl_exec($ch);
-            $apiTime = round((microtime(true) - $apiStartTime) * 1000, 2);
-            
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curlError = curl_error($ch);
-            curl_close($ch);
-
-            $this->logger->info('Gemini API response received', [
-                'http_code' => $httpCode,
-                'api_time_ms' => $apiTime,
-                'response_size' => strlen($response),
-                'has_curl_error' => !empty($curlError)
-            ]);
-
-            if ($curlError) {
-                $this->logger->error('Gemini API connection error', ['curl_error' => $curlError]);
-                throw new ExternalServiceException('Gemini', 'Error de conexión: ' . $curlError);
-            }
-
-            if ($httpCode !== 200) {
-                $this->logger->error('Gemini API HTTP error', [
-                    'http_code' => $httpCode,
-                    'response' => substr($response, 0, 500)
-                ]);
-                throw new ExternalServiceException('Gemini', "Error en la API de Gemini: HTTP {$httpCode}");
-            }
-
-            $geminiResponse = json_decode($response, true);
-            
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                $this->logger->error('Gemini API invalid JSON response', [
-                    'json_error' => json_last_error_msg(),
-                    'response_preview' => substr($response, 0, 200)
-                ]);
-                throw new ExternalServiceException('Gemini', 'Respuesta inválida de la API');
-            }
-
-            // Extraer respuesta
-            $botResponse = $geminiResponse['candidates'][0]['content']['parts'][0]['text'] ?? 
-                          'Disculpa, no pude procesar tu consulta en este momento. Por favor intenta nuevamente.';
-
-            $this->logger->info('Gemini API call successful', [
-                'response_length' => strlen($botResponse),
-                'api_time_ms' => $apiTime
-            ]);
+            // Generate content using the AI client
+            $botResponse = $this->aiClient->generateContent($fullPrompt);
 
             return [
                 'success' => true,
-                'response' => trim($botResponse),
+                'response' => $botResponse,
                 'timestamp' => date('c'),
-                'mode' => 'production'
+                'mode' => $this->aiClient->getProviderName()
             ];
 
-        } catch (ExternalServiceException $e) {
-            throw $e;
-        } catch (RuntimeException $e) {
-            throw $e;
         } catch (\Exception $e) {
-            $this->logger->error('Unexpected error in Gemini API call', [
+            $this->logger->error('AI processing failed', [
                 'error' => $e->getMessage(),
-                'exception_type' => get_class($e),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'ai_provider' => $this->aiClient->getProviderName()
             ]);
-            throw new RuntimeException('Error interno del servidor: ' . $e->getMessage());
+            throw $e;
         }
     }
 }
