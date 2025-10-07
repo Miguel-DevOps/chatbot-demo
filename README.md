@@ -25,20 +25,62 @@
 
 ## 📋 Table of Contents
 
+- [🚨 Known Issues & Security Notices](#-known-issues--security-notices)
 - [🎯 Project Vision](#-project-vision)
 - [⚡ Quick Start](#-quick-start)
 - [🏗️ Deployment Levels & Architecture](#️-deployment-levels--architecture)
-- [🗺️ Strategic Roadmap](#️-strategic-roadmap)  
-- [�️ Key Architectural Decisions](#️-key-architectural-decisions)
+- [🗺️ Strategic Roadmap](#️-strategic-roadmap)  
+- [🏛️ Key Architectural Decisions](#️-key-architectural-decisions)
 - [🔧 Configuration & Security](#-configuration--security)
 - [🧪 Testing & Quality](#-testing--quality)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 - [📄 Spanish Documentation](./README.es.md)
 
-## 🎯 Project Vision
+## 🚨 Known Issues & Security Notices
 
-This project serves as a **practical blueprint** for evolving a chatbot application from proof-of-concept to enterprise-ready deployment. It demonstrates clean architecture, comprehensive testing, and strategic refactoring patterns through **intentional architectural constraints** that mirror real-world development challenges.
+> ⚠️ **IMPORTANT**: This section documents current issues that need attention before production deployment.
+
+### 🔴 Critical Issues
+
+**API Bootstrap Error (DependencyContainer)**
+- **Issue**: `TypeError` in `DependencyContainer` line 216 - Prometheus CollectorRegistry parameter error
+- **Impact**: API fails to start properly, health checks fail
+- **Status**: 🔴 **Blocking production deployment**
+- **Fix Required**: Debug dependency injection configuration for metrics service
+
+**Test Suite Failures**
+- **Issue**: PHPUnit integration tests failing due to ErrorHandlerMiddleware constructor mismatch
+- **Impact**: CI/CD pipeline unreliable, test coverage compromised  
+- **Status**: 🟡 **Development impacted**
+- **Fix Required**: Resolve middleware dependency injection issues
+
+### 🟡 Security Notices
+
+**Container Security Hardening**: ✅ **COMPLETED**
+- ✅ Non-root user enforcement (UID 1000:1000)
+- ✅ Security capabilities dropped (no-new-privileges)
+- ✅ Read-only filesystem with controlled tmpfs
+- ✅ PHP security settings (disabled dangerous functions)
+
+**CI/CD Security Hardening**: ✅ **COMPLETED**  
+- ✅ Strict security audits (fail on critical vulnerabilities)
+- ✅ Removed `continue-on-error` from security checks
+- ✅ Container security validation in pipeline
+
+**Rate Limiting**: ✅ **IMPLEMENTED**
+- Production Nginx configuration includes rate limiting
+- Chat endpoints: 5 req/s with burst of 10
+- API endpoints: 10 req/s with burst of 20
+
+### 🔧 Immediate Actions Required
+
+1. **Fix DependencyContainer**: Resolve Prometheus CollectorRegistry injection
+2. **Fix Test Suite**: Correct ErrorHandlerMiddleware constructor parameters  
+3. **Validate Production Config**: Test complete docker-compose production deployment
+4. **Security Audit**: Run `./scripts/security-audit.sh` before deployment
+
+## 🎯 Project VisionThis project serves as a **practical blueprint** for evolving a chatbot application from proof-of-concept to enterprise-ready deployment. It demonstrates clean architecture, comprehensive testing, and strategic refactoring patterns through **intentional architectural constraints** that mirror real-world development challenges.
 
 **Educational Approach:** Rather than presenting a perfect solution, this codebase includes deliberate limitations (filesystem dependencies, hardcoded configurations) that create learning opportunities for systematic architectural evolution. Each constraint teaches specific lessons about scalability, state management, and deployment considerations.
 
@@ -214,45 +256,106 @@ RATE_LIMIT_WINDOW=3600
 
 ### 🔒 Production Server Configuration
 
-#### Nginx + PHP-FPM (Recommended)
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-    
-    # SSL configuration (use Certbot for Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    
-    # CRITICAL: Root must point to api/public
-    root /var/www/chatbot-demo/api/public;
-    index index.php;
-    
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
-    
-    # Block sensitive files
-    location ~ /\.(env|git) { deny all; }
-    location ~ \.(json|lock|md)$ { deny all; }
-    
-    # PHP processing
-    location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-        include fastcgi_params;
-    }
-    
-    # Clean URLs
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-}
+### 🐳 Production Deployment with Docker (Recommended)
+
+#### Multi-Stage Docker Build
+The project includes a production-optimized Dockerfile with two stages:
+
+1. **Dependencies Stage**: Installs all dependencies including dev dependencies for complete build
+2. **Production Stage**: Copies only production files and dependencies to a clean PHP-FPM Alpine image
+
+**Key Production Features:**
+- Multi-stage build for minimal image size
+- Non-root user for security
+- Optimized PHP-FPM configuration
+- Health check integration
+- Proper file permissions
+
+#### Docker Compose Production Setup
+
+```bash
+# Deploy production environment
+docker-compose -f docker-compose.prod.yml up -d
+
+# Scale API instances
+docker-compose -f docker-compose.prod.yml up -d --scale api=3
+
+# Monitor services
+docker-compose -f docker-compose.prod.yml logs -f
 ```
 
-#### Apache + mod_php
+**Production Architecture:**
+```
+[Internet] → [Nginx:80/443] → [PHP-FPM:9000] → [Redis:6379]
+```
+
+**Key Differences from Development:**
+
+| **Component** | **Development** | **Production** |
+|---------------|-----------------|----------------|
+| **Web Server** | Built-in PHP server | Nginx + PHP-FPM |
+| **Image** | Development with volumes | Multi-stage optimized |
+| **Environment** | Hot reload, debug logs | Optimized, info logs |
+| **Security** | Basic CORS | Security headers, rate limiting |
+| **Monitoring** | None | Health checks, resource limits |
+| **Performance** | Single process | Process pooling, caching |
+
+**Configuration Files:**
+- `nginx/nginx.conf`: Main Nginx configuration with security and performance optimizations
+- `nginx/conf.d/default.conf`: Virtual host with rate limiting and FastCGI configuration
+- `docker-compose.prod.yml`: Production orchestration with resource limits
+
+#### Traditional Server Setup (Nginx + PHP-FPM)
+
+For traditional VPS deployment without Docker:
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.com;
+    
+    # SSL configuration (use Certbot for Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    
+    # CRITICAL: Root must point to api/public
+    root /var/www/chatbot-demo/api/public;
+    index index.php;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+    
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req zone=api burst=20 nodelay;
+    
+    # Block sensitive files
+    location ~ /\.(env|git) { deny all; }
+    location ~ \.(json|lock|md)$ { deny all; }
+    
+    # PHP processing
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        
+        # FastCGI optimizations
+        fastcgi_connect_timeout 5s;
+        fastcgi_send_timeout 30s;
+        fastcgi_read_timeout 30s;
+        fastcgi_buffer_size 16k;
+        fastcgi_buffers 4 16k;
+    }
+    
+    # Clean URLs
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+}
+```#### Apache + mod_php
 ```apache
 <VirtualHost *:443>
     ServerName your-domain.com

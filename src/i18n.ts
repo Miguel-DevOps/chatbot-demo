@@ -28,40 +28,43 @@ i18n
     // Idiomas soportados
     supportedLngs: ['es', 'en'],
     
-    // Configuración del detector de idioma
+    // Language detector configuration
     detection: {
-      // Métodos de detección en orden de prioridad
+      // Detection methods in priority order
       order: ['localStorage', 'navigator', 'htmlTag'],
-      // Caches para persistir el idioma seleccionado
+      // Caches to persist selected language
       caches: ['localStorage'],
-      // Clave en localStorage
+      // LocalStorage key
       lookupLocalStorage: 'i18nextLng',
     },
 
-    // Configuración de debugging (solo en desarrollo)
+    // Debug configuration (development only)
     debug: import.meta.env.DEV,
 
-    // Configuración de interpolación
+    // Interpolation configuration
     interpolation: {
-      // React ya escapa los valores, no necesitamos escapar aquí
+      // React already escapes values, no need to escape here
       escapeValue: false,
     },
 
-    // Configuración de namespaces (para futuras expansiones)
+    // Namespace configuration (for future expansions)
     defaultNS: 'translation',
     ns: ['translation'],
 
-    // Configuración de carga de recursos
-    load: 'languageOnly', // 'es' en lugar de 'es-ES'
+    // Resource loading configuration
+    load: 'languageOnly', // 'es' instead of 'es-ES'
     
-    // Configuración de fallback
+    // Fallback configuration
     nonExplicitSupportedLngs: true,
   });
 
 export default i18n;
 
-// Tipos TypeScript para autocompletado
+// TypeScript types for autocompletion
 export type TranslationKeys = 
+  | 'chatbot.home'
+  | 'chatbot.header'
+  | 'chatbot.description'
   | 'chatbot.welcome'
   | 'chatbot.title'
   | 'chatbot.status.online'

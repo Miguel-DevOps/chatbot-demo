@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 
-// Test básico para validar el entorno de Vitest
+// Basic test to validate Vitest environment
 
 describe('Entorno de desarrollo', () => {
-  it('debería ejecutar tests correctamente', () => {
+  it('should execute tests correctly', () => {
     expect(true).toBe(true);
   });
 });

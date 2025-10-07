@@ -4,7 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import './i18n'; // Inicializar i18next
 
-// Configurar el cliente de TanStack Query
+// Configure TanStack Query client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

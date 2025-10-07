@@ -23,8 +23,8 @@ export function useChatMessage() {
       // Invalidar queries relacionadas si es necesario
       queryClient.setQueryData(['chat', 'last-response'], data);
     },
-    onError: (error) => {
-      console.error('Error en useChatMessage:', error);
+    onError: () => {
+      // Error handling is managed by the component layer
     },
     // Configuración de reintentos
     retry: (failureCount, error) => {

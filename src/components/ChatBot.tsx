@@ -143,8 +143,7 @@ const ChatBot: React.FC = () => {
       onSuccess: (response) => {
         addMessage(response.response || t('messages.reformulate'));
       },
-      onError: (error) => {
-        console.error('Error sending message:', error);
+      onError: () => {
         addMessage(t('messages.error'));
       }
     });

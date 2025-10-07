@@ -1,42 +1,42 @@
-# Información General del Chatbot Demo
+# Chatbot Demo General Information
 
-## Acerca del Chatbot Demo
+## About Chatbot Demo
 
-**Chatbot Demo** es una solución de demostración que muestra las capacidades de un asistente virtual moderno. Este chatbot utiliza tecnología de inteligencia artificial para proporcionar respuestas inteligentes y contextualmente relevantes.
+**Chatbot Demo** is a demonstration solution that showcases the capabilities of a modern virtual assistant. This chatbot uses artificial intelligence technology to provide intelligent and contextually relevant responses.
 
-### Características Principales
+### Main Features
 
-- **Respuestas Inteligentes**: Utiliza AI avanzada para generar respuestas naturales
-- **Multiidioma**: Soporte para español e inglés
-- **Interfaz Moderna**: Diseño responsivo y animaciones fluidas
-- **Arquitectura Escalable**: Backend moderno con Slim Framework
+- **Intelligent Responses**: Uses advanced AI to generate natural responses
+- **Multilingual**: Support for Spanish and English
+- **Modern Interface**: Responsive design and fluid animations
+- **Scalable Architecture**: Modern backend with Slim Framework
 
-### Tecnologías Utilizadas
+### Technologies Used
 
 - **Frontend**: React + TypeScript + TailwindCSS
 - **Backend**: PHP + Slim Framework + SQLite
 - **AI**: Google Gemini API
-- **Rate Limiting**: Sistema robusto basado en IP
+- **Rate Limiting**: Robust IP-based system
 
-## Funcionalidades Disponibles
+## Available Functionalities
 
-1. **Chat Inteligente**: Conversación natural con AI
-2. **Contacto WhatsApp**: Redirección a soporte directo
-3. **Preguntas Frecuentes**: Acceso rápido a información común
-4. **Agendar Citas**: Sistema de reservas (configurable)
+1. **Intelligent Chat**: Natural conversation with AI
+2. **WhatsApp Contact**: Redirection to direct support
+3. **Frequently Asked Questions**: Quick access to common information
+4. **Schedule Appointments**: Booking system (configurable)
 
-## Horarios de Atención
+## Support Hours
 
-- **Chatbot**: 24/7 disponible
-- **Soporte Humano**: Lunes a Viernes, 9:00 AM - 6:00 PM
-- **WhatsApp**: Respuesta en horario laboral
+- **Chatbot**: 24/7 available
+- **Human Support**: Monday to Friday, 9:00 AM - 6:00 PM
+- **WhatsApp**: Response during business hours
 
-## Información de Contacto
+## Contact Information
 
 - **WhatsApp**: +00 000 000 0000 (Demo)
 - **Email**: demo@chatbot-demo.com
-- **Sitio Web**: www.chatbot-demo.com
+- **Website**: www.chatbot-demo.com
 
 ---
 
-*Este es un chatbot de demostración. Todas las respuestas son ficticias y con fines educativos.*
+*This is a demonstration chatbot. All responses are fictional and for educational purposes.*

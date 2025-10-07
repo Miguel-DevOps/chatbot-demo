@@ -1,53 +1,53 @@
-# Preguntas Frecuentes (FAQ)
+# Frequently Asked Questions (FAQ)
 
-## Preguntas Generales
+## General Questions
 
-### ¿Qué es este chatbot?
-Este es un chatbot de demostración que muestra las capacidades de un asistente virtual moderno. Utiliza inteligencia artificial para proporcionar respuestas contextuales.
+### What is this chatbot?
+This is a demonstration chatbot that showcases the capabilities of a modern virtual assistant. It uses artificial intelligence to provide contextual responses.
 
-### ¿Está disponible 24/7?
-Sí, el chatbot está disponible las 24 horas del día, los 7 días de la semana. Para soporte humano, consulta nuestros horarios de atención.
+### Is it available 24/7?
+Yes, the chatbot is available 24 hours a day, 7 days a week. For human support, check our support hours.
 
-### ¿En qué idiomas funciona?
-Actualmente funciona en español e inglés, con detección automática según las preferencias del navegador.
+### What languages does it work in?
+It currently works in Spanish and English, with automatic detection based on browser preferences.
 
-## Preguntas Técnicas
+## Technical Questions
 
-### ¿Qué tecnologías utiliza?
+### What technologies does it use?
 - Frontend: React, TypeScript, TailwindCSS
-- Backend: PHP con Slim Framework
-- Base de datos: SQLite para rate limiting
+- Backend: PHP with Slim Framework
+- Database: SQLite for rate limiting
 - AI: Google Gemini API
 
-### ¿Es seguro?
-Sí, implementa múltiples capas de seguridad:
-- Rate limiting por IP
-- Validación de entrada
-- Variables de entorno para secretos
-- Headers de seguridad
+### Is it secure?
+Yes, it implements multiple security layers:
+- Rate limiting per IP
+- Input validation
+- Environment variables for secrets
+- Security headers
 
-### ¿Se puede personalizar?
-Absolutamente. La knowledge base está en archivos Markdown que se pueden editar fácilmente sin tocar código.
+### Can it be customized?
+Absolutely. The knowledge base is in Markdown files that can be easily edited without touching code.
 
-## Preguntas de Integración
+## Integration Questions
 
-### ¿Se puede integrar en WordPress?
-Sí, incluye scripts para generar un plugin de WordPress compatible.
+### Can it be integrated into WordPress?
+Yes, it includes scripts to generate a compatible WordPress plugin.
 
-### ¿Funciona en hosting compartido?
-Sí, está diseñado para funcionar en cualquier hosting que soporte PHP 7.4+.
+### Does it work on shared hosting?
+Yes, it's designed to work on any hosting that supports PHP 7.4+.
 
-### ¿Necesita base de datos?
-No necesita MySQL u otra base de datos externa. Utiliza SQLite para funcionalidades específicas.
+### Does it need a database?
+It doesn't need MySQL or other external database. It uses SQLite for specific functionalities.
 
-## Soporte
+## Support
 
-### ¿Cómo puedo obtener ayuda?
-- Chat en vivo: Disponible en este widget
-- WhatsApp: Para soporte directo
-- Email: Para consultas técnicas
+### How can I get help?
+- Live chat: Available in this widget
+- WhatsApp: For direct support
+- Email: For technical queries
 
-### ¿Ofrecen personalización?
-Sí, el sistema está diseñado para ser altamente personalizable según las necesidades específicas.
+### Do you offer customization?
+Yes, the system is designed to be highly customizable according to specific needs.
 
-*Para más información técnica, consulta la documentación del proyecto en GitHub.*
+*For more technical information, check the project documentation on GitHub.*
