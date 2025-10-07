@@ -1,127 +1,111 @@
 #!/bin/bash
 
-# Script para build de producción del proyecto
-# Genera los archivos finales listos para despliegue
+# Main build script for the chatbot project
+# Generates production-ready files for deployment
 
-set -e
+# Load common utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/common.sh"
 
-# Configuración
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DIST_DIR="$PROJECT_ROOT/dist"
-API_DIR="$PROJECT_ROOT/api"
-
-# Colores para output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Función para mostrar ayuda
+# Show help information
 show_help() {
-    echo "Uso: ./build.sh [OPCION]"
+    show_header "Build Script Help" "Build options for the chatbot project"
+    
+    echo "USAGE:"
+    echo "  ./build.sh [OPTION]"
     echo ""
-    echo "Opciones:"
-    echo "  frontend     Construir solo el frontend"
-    echo "  backend      Preparar solo el backend"
-    echo "  wordpress    Generar plugin de WordPress"
-    echo "  all          Construir todo (default)"
-    echo "  clean        Limpiar archivos de build"
-    echo "  --help       Mostrar esta ayuda"
+    echo "OPTIONS:"
+    echo "  frontend     Build only the React frontend"
+    echo "  backend      Prepare only the PHP backend"
+    echo "  wordpress    Generate WordPress plugin"
+    echo "  all          Build everything (default)"
+    echo "  clean        Clean build artifacts"
+    echo "  --help, -h   Show this help"
     echo ""
-    echo "Ejemplos:"
-    echo "  ./build.sh              # Build completo"
-    echo "  ./build.sh frontend     # Solo frontend"
-    echo "  ./build.sh clean        # Limpiar builds"
+    echo "EXAMPLES:"
+    echo "  ./build.sh              # Complete build"
+    echo "  ./build.sh frontend     # Frontend only"
+    echo "  ./build.sh clean        # Clean builds"
+    echo ""
 }
 
-# Función para limpiar builds anteriores
+# Clean previous builds
 clean_builds() {
-    echo -e "${YELLOW}🧹 Limpiando builds anteriores...${NC}"
+    show_progress "Cleaning previous builds"
     
-    # Limpiar frontend
-    if [ -d "$DIST_DIR" ]; then
+    # Clean frontend
+    if [[ -d "$DIST_DIR" ]]; then
         rm -rf "$DIST_DIR"
-        echo "  ✓ Directorio dist/ eliminado"
+        log_success "Removed dist/ directory"
     fi
     
-    # Limpiar cache de composer
-    if [ -d "$API_DIR/vendor" ]; then
+    # Clean composer cache
+    if [[ -d "$API_DIR/vendor" ]]; then
         cd "$API_DIR"
-        composer clear-cache
-        echo "  ✓ Cache de Composer limpiado"
+        exec_with_log "composer clear-cache" "Clear Composer cache"
     fi
     
-    # Limpiar node_modules cache
+    # Clean pnpm cache
     cd "$PROJECT_ROOT"
-    if command -v pnpm >/dev/null 2>&1; then
-        pnpm store prune
-        echo "  ✓ Cache de pnpm limpiado"
+    if check_command "pnpm" >/dev/null 2>&1; then
+        exec_with_log "pnpm store prune" "Clean pnpm cache"
     fi
     
-    echo -e "${GREEN}✅ Limpieza completada${NC}"
+    log_success "Cleanup completed"
 }
 
-# Función para construir el frontend
+# Build frontend for production
 build_frontend() {
-    echo -e "${BLUE}🚀 Construyendo frontend para producción...${NC}"
-    echo "=================================="
+    show_progress "Building frontend for production"
     
     cd "$PROJECT_ROOT"
     
-    # Verificar dependencias
-    if [ ! -d "node_modules" ]; then
-        echo "Instalando dependencias de Node.js..."
-        pnpm install
+    # Check dependencies
+    check_command "pnpm" || return 1
+    check_node_version 18 || return 1
+    
+    # Install dependencies if needed
+    if [[ ! -d "node_modules" ]]; then
+        exec_with_log "pnpm install" "Install Node.js dependencies"
     fi
     
-    # Verificar variables de entorno
-    if [ ! -f ".env" ]; then
-        echo -e "${YELLOW}⚠️  Archivo .env no encontrado, usando configuración por defecto${NC}"
+    # Check environment file
+    if [[ ! -f ".env" ]]; then
+        log_warning ".env file not found, using default configuration"
     fi
     
-    # Build del frontend
-    echo "Ejecutando build de Vite..."
-    pnpm build || {
-        echo -e "${RED}❌ Error en build del frontend${NC}"
-        return 1
-    }
+    # Build the frontend
+    exec_with_log "pnpm build" "Build React frontend" || return 1
     
-    # Verificar que el build se creó correctamente
-    if [ ! -f "$DIST_DIR/index.html" ]; then
-        echo -e "${RED}❌ Error: No se generó dist/index.html${NC}"
-        return 1
-    fi
+    # Verify build output
+    check_file "$DIST_DIR/index.html" "Build output index.html" || return 1
     
-    # Mostrar estadísticas del build
-    echo ""
-    echo "📊 Estadísticas del build:"
-    echo "  └─ Archivos generados:"
-    find "$DIST_DIR" -type f -name "*.html" -o -name "*.js" -o -name "*.css" | while read file; do
+    # Show build statistics
+    log_info "Build statistics:"
+    find "$DIST_DIR" -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" \) | while read -r file; do
         size=$(du -h "$file" | cut -f1)
-        echo "     └─ $(basename "$file"): $size"
+        log_info "  $(basename "$file"): $size"
     done
     
-    echo -e "${GREEN}✅ Frontend construido exitosamente${NC}"
+    log_success "Frontend build completed"
     return 0
 }
 
-# Función para preparar el backend
+# Prepare backend for production
 build_backend() {
-    echo -e "${BLUE}🔧 Preparando backend para producción...${NC}"
-    echo "=================================="
+    show_progress "Preparing backend for production"
     
     cd "$API_DIR"
     
-    # Instalar dependencias sin dev
-    echo "Instalando dependencias de producción..."
-    composer install --no-dev --optimize-autoloader || {
-        echo -e "${RED}❌ Error instalando dependencias del backend${NC}"
-        return 1
-    }
+    # Check dependencies
+    check_command "composer" || return 1
+    check_php_version 8.1 || return 1
     
-    # Verificar archivos esenciales
-    essential_files=(
+    # Install production dependencies
+    exec_with_log "composer install --no-dev --optimize-autoloader --no-scripts" "Install production dependencies" || return 1
+    
+    # Verify essential files
+    local essential_files=(
         "public/index.php"
         "src/Controllers/ChatController.php"
         "src/Controllers/HealthController.php"
@@ -129,103 +113,115 @@ build_backend() {
         "composer.json"
     )
     
-    echo "Verificando archivos esenciales..."
+    log_info "Verifying essential files..."
     for file in "${essential_files[@]}"; do
-        if [ ! -f "$file" ]; then
-            echo -e "${RED}❌ Archivo esencial faltante: $file${NC}"
-            return 1
-        else
-            echo "  ✓ $file"
-        fi
+        check_file "$file" || return 1
     done
     
-    # Verificar permisos
-    if [ -d "src/data" ]; then
-        chmod 755 src/data
-        echo "  ✓ Permisos de directorio data configurados"
-    fi
+    # Set proper permissions
+    log_info "Setting production permissions..."
+    find . -type f -exec chmod 644 {} \;
+    find . -type d -exec chmod 755 {} \;
     
-    if [ -d "logs" ]; then
-        chmod 755 logs
-        echo "  ✓ Permisos de directorio logs configurados"
-    fi
+    # Create and set permissions for data directories
+    for dir in "storage/logs" "logs" "data"; do
+        if [[ ! -d "$dir" ]]; then
+            mkdir -p "$dir"
+        fi
+        chmod 775 "$dir"
+        log_debug "Directory $dir ready with 775 permissions"
+    done
     
-    echo -e "${GREEN}✅ Backend preparado para producción${NC}"
+    log_success "Backend preparation completed"
     return 0
 }
 
-# Función para generar plugin de WordPress
+# Generate WordPress plugin
 build_wordpress_plugin() {
-    echo -e "${BLUE}📦 Generando plugin de WordPress...${NC}"
-    echo "=================================="
+    show_progress "Generating WordPress plugin"
     
     local plugin_dir="$PROJECT_ROOT/wordpress-plugin"
     
-    # Limpiar directorio anterior
-    if [ -d "$plugin_dir" ]; then
+    # Clean previous plugin
+    if [[ -d "$plugin_dir" ]]; then
         rm -rf "$plugin_dir"
     fi
-    
     mkdir -p "$plugin_dir"
     
-    # Construir frontend si no existe
-    if [ ! -d "$DIST_DIR" ]; then
+    # Ensure frontend is built
+    if [[ ! -d "$DIST_DIR" ]]; then
+        log_info "Frontend not built, building now..."
         build_frontend || return 1
     fi
     
-    # Preparar backend si no está listo
+    # Ensure backend is ready
     cd "$API_DIR"
-    if [ ! -d "vendor" ] || [ -d "vendor/phpunit" ]; then
-        echo "Preparando backend para plugin..."
-        composer install --no-dev --optimize-autoloader
+    if [[ ! -d "vendor" ]] || [[ -d "vendor/phpunit" ]]; then
+        log_info "Backend not ready for production, preparing now..."
+        exec_with_log "composer install --no-dev --optimize-autoloader" "Prepare backend for plugin"
     fi
     
-    # Copiar archivos
-    echo "Copiando archivos al plugin..."
+    # Copy files
+    log_info "Copying files to plugin..."
     cp -r "$API_DIR" "$plugin_dir/api"
     cp -r "$DIST_DIR" "$plugin_dir/frontend"
     
-    # Crear archivo principal del plugin
+    # Generate main plugin file
     cat > "$plugin_dir/chatbot-demo.php" << 'EOF'
 <?php
 /**
  * Plugin Name: Chatbot Demo
- * Description: Chatbot inteligente con IA
+ * Description: Intelligent AI-powered chatbot for your website
  * Version: 1.0.0
- * Author: Tu Nombre
+ * Author: Miguel-DevOps
+ * License: MIT
+ * Text Domain: chatbot-demo
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-// Cargar autoloader
-require_once plugin_dir_path(__FILE__) . 'api/vendor/autoload.php';
+define('CHATBOT_DEMO_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('CHATBOT_DEMO_PLUGIN_URL', plugin_dir_url(__FILE__));
 
-// Inicializar plugin
+// Load autoloader
+require_once CHATBOT_DEMO_PLUGIN_DIR . 'api/vendor/autoload.php';
+
+// Initialize plugin
 add_action('init', 'chatbot_demo_init');
 
 function chatbot_demo_init() {
-    // Registrar endpoints de la API
+    // Register AJAX endpoints
     add_action('wp_ajax_chatbot_message', 'chatbot_handle_message');
     add_action('wp_ajax_nopriv_chatbot_message', 'chatbot_handle_message');
     
-    // Enqueue scripts
+    // Enqueue assets
     add_action('wp_enqueue_scripts', 'chatbot_enqueue_scripts');
+    
+    // Add admin menu
+    add_action('admin_menu', 'chatbot_admin_menu');
 }
 
 function chatbot_handle_message() {
-    // Manejar mensajes del chatbot
+    // Verify nonce for security
+    if (!wp_verify_nonce($_POST['nonce'], 'chatbot_nonce')) {
+        wp_die('Security check failed');
+    }
+    
     $message = sanitize_text_field($_POST['message']);
     
-    // Aquí integrar con tu API
-    wp_send_json_success(['response' => 'Respuesta del chatbot']);
+    // Here you would integrate with your ChatService
+    // For now, return a simple response
+    wp_send_json_success([
+        'response' => 'Hello! This is a WordPress chatbot response to: ' . $message
+    ]);
 }
 
 function chatbot_enqueue_scripts() {
     wp_enqueue_script(
         'chatbot-demo',
-        plugin_dir_url(__FILE__) . 'frontend/assets/index.js',
+        CHATBOT_DEMO_PLUGIN_URL . 'frontend/assets/index.js',
         [],
         '1.0.0',
         true
@@ -233,118 +229,184 @@ function chatbot_enqueue_scripts() {
     
     wp_enqueue_style(
         'chatbot-demo',
-        plugin_dir_url(__FILE__) . 'frontend/assets/index.css',
+        CHATBOT_DEMO_PLUGIN_URL . 'frontend/assets/index.css',
         [],
         '1.0.0'
     );
+    
+    // Localize script for AJAX
+    wp_localize_script('chatbot-demo', 'chatbot_ajax', [
+        'ajax_url' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('chatbot_nonce')
+    ]);
+}
+
+function chatbot_admin_menu() {
+    add_options_page(
+        'Chatbot Demo Settings',
+        'Chatbot Demo',
+        'manage_options',
+        'chatbot-demo',
+        'chatbot_admin_page'
+    );
+}
+
+function chatbot_admin_page() {
+    echo '<div class="wrap">';
+    echo '<h1>Chatbot Demo Settings</h1>';
+    echo '<p>Configure your AI chatbot settings here.</p>';
+    echo '</div>';
 }
 EOF
     
-    # Crear archivo README del plugin
+    # Generate plugin README
     cat > "$plugin_dir/README.txt" << 'EOF'
 === Chatbot Demo ===
-Contributors: tu-usuario
-Tags: chatbot, ai, customer-service
+Contributors: miguel-devops
+Tags: chatbot, ai, customer-service, automation
 Requires at least: 5.0
-Tested up to: 6.3
+Tested up to: 6.4
 Stable tag: 1.0.0
 License: MIT
+License URI: https://opensource.org/licenses/MIT
 
-Chatbot inteligente con IA para tu sitio web.
+Modern AI-powered chatbot for your WordPress website.
 
 == Description ==
 
-Un chatbot moderno con inteligencia artificial que puede responder preguntas de tus usuarios.
+Chatbot Demo is a modern, AI-powered chatbot that can be easily integrated into any WordPress website. It provides intelligent responses to user queries and can be customized to match your brand.
+
+Features:
+* AI-powered responses
+* Easy integration
+* Customizable appearance
+* Secure and performant
+* Mobile-friendly
 
 == Installation ==
 
-1. Sube el plugin a tu directorio `/wp-content/plugins/`
-2. Activa el plugin desde el panel de WordPress
-3. Configura las opciones en Ajustes > Chatbot Demo
+1. Upload the plugin files to `/wp-content/plugins/chatbot-demo/`
+2. Activate the plugin through the 'Plugins' screen in WordPress
+3. Configure the plugin in Settings > Chatbot Demo
+4. Add your API keys and customize settings
+
+== Frequently Asked Questions ==
+
+= How do I configure the chatbot? =
+
+Go to Settings > Chatbot Demo in your WordPress admin to configure the plugin.
+
+= Is this plugin secure? =
+
+Yes, the plugin follows WordPress security best practices and includes proper sanitization and nonce verification.
 
 == Changelog ==
 
 = 1.0.0 =
-* Versión inicial
+* Initial release
+* AI-powered chatbot functionality
+* WordPress integration
 EOF
     
-    echo -e "${GREEN}✅ Plugin de WordPress generado en: $plugin_dir${NC}"
+    log_success "WordPress plugin generated: $plugin_dir"
     return 0
 }
 
-# Función para mostrar resumen del build
+# Show build summary
 show_build_summary() {
-    echo ""
-    echo -e "${BLUE}📊 Resumen del Build${NC}"
-    echo "=================================="
+    log_info "Build Summary"
+    echo "═══════════════════════════════════════"
     
-    if [ -d "$DIST_DIR" ]; then
-        echo -e "${GREEN}✅ Frontend:${NC} Listo en ./dist/"
-        echo "  └─ index.html, CSS y JS generados"
+    if [[ -d "$DIST_DIR" ]]; then
+        log_success "Frontend: Ready in ./dist/"
+        echo "  └─ index.html, CSS and JS generated"
     fi
     
-    if [ -d "$API_DIR/vendor" ]; then
-        echo -e "${GREEN}✅ Backend:${NC} Listo en ./api/"
-        echo "  └─ Dependencias de producción instaladas"
+    if [[ -d "$API_DIR/vendor" ]]; then
+        log_success "Backend: Ready in ./api/"
+        echo "  └─ Production dependencies installed"
     fi
     
-    if [ -d "$PROJECT_ROOT/wordpress-plugin" ]; then
-        echo -e "${GREEN}✅ WordPress Plugin:${NC} Listo en ./wordpress-plugin/"
-        echo "  └─ Plugin completo para WordPress"
+    if [[ -d "$PROJECT_ROOT/wordpress-plugin" ]]; then
+        log_success "WordPress Plugin: Ready in ./wordpress-plugin/"
+        echo "  └─ Complete plugin package created"
     fi
     
-    echo ""
-    echo -e "${GREEN}🚀 Proyecto listo para despliegue!${NC}"
+    echo
+    log_success "Project ready for deployment!"
 }
 
-# Función principal
+# Main function
 main() {
-    local command=${1:-all}
+    local command="${1:-all}"
     
-    case $command in
+    case "$command" in
         --help|-h)
             show_help
             exit 0
             ;;
         clean)
+            show_header "Clean Build Artifacts"
             clean_builds
+            show_footer "success"
             exit 0
             ;;
         frontend)
+            show_header "Frontend Build"
             build_frontend
-            exit $?
+            local result=$?
+            show_footer "$([ $result -eq 0 ] && echo "success" || echo "error")"
+            exit $result
             ;;
         backend)
+            show_header "Backend Build"
             build_backend
-            exit $?
+            local result=$?
+            show_footer "$([ $result -eq 0 ] && echo "success" || echo "error")"
+            exit $result
             ;;
         wordpress)
+            show_header "WordPress Plugin Build"
             build_wordpress_plugin
-            exit $?
+            local result=$?
+            show_footer "$([ $result -eq 0 ] && echo "success" || echo "error")"
+            exit $result
             ;;
         all)
-            echo -e "${BLUE}🚀 Build completo del proyecto...${NC}"
-            echo "=================================================="
+            show_header "Complete Project Build" "Building frontend, backend, and generating artifacts"
+            
+            local has_errors=0
             
             # Build frontend
-            build_frontend || exit 1
-            echo ""
+            if ! build_frontend; then
+                has_errors=1
+            fi
+            echo
             
-            # Preparar backend
-            build_backend || exit 1
-            echo ""
+            # Build backend
+            if ! build_backend; then
+                has_errors=1
+            fi
+            echo
             
-            # Mostrar resumen
-            show_build_summary
-            exit 0
+            # Show summary
+            if [[ $has_errors -eq 0 ]]; then
+                show_build_summary
+                show_footer "success"
+                exit 0
+            else
+                log_error "Build completed with errors"
+                show_footer "error"
+                exit 1
+            fi
             ;;
         *)
-            echo -e "${RED}❌ Opción no válida: $command${NC}"
-            echo "Usa --help para ver las opciones disponibles"
+            log_error "Invalid option: $command"
+            echo "Use --help to see available options"
             exit 1
             ;;
     esac
 }
 
-# Ejecutar función principal
+# Execute main function
 main "$@"
