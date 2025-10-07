@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace ChatbotDemo\Middleware;
 
 use ChatbotDemo\Config\AppConfig;
+use ChatbotDemo\Services\TracingService;
+use OpenTelemetry\API\Trace\SpanInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -18,23 +20,56 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
 {
     private LoggerInterface $logger;
     private AppConfig $config;
+    private TracingService $tracingService;
 
-    public function __construct(LoggerInterface $logger, AppConfig $config)
+    public function __construct(LoggerInterface $logger, AppConfig $config, TracingService $tracingService)
     {
         $this->logger = $logger;
         $this->config = $config;
+        $this->tracingService = $tracingService;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        // Start error handling span
+        $span = $this->tracingService->startHttpSpan(
+            $request->getMethod(),
+            (string) $request->getUri(),
+            [
+                'component' => 'error_handler',
+                'http.user_agent' => $request->getHeaderLine('User-Agent')
+            ]
+        );
+
         try {
-            return $handler->handle($request);
+            $response = $handler->handle($request);
+            
+            // Add success attributes to span
+            $this->tracingService->finishSpan($span, [
+                'http.status_code' => $response->getStatusCode(),
+                'success' => true
+            ]);
+            
+            return $response;
+            
         } catch (Throwable $exception) {
-            return $this->handleException($request, $exception);
+            // Mark error in span and finish with error
+            $this->tracingService->addSpanEvent($span, 'exception_caught', [
+                'exception.type' => get_class($exception),
+                'exception.message' => $exception->getMessage()
+            ]);
+
+            $response = $this->handleException($request, $exception, $span);
+            
+            $this->tracingService->finishSpanWithError($span, $exception, [
+                'http.status_code' => $response->getStatusCode()
+            ]);
+            
+            return $response;
         }
     }
 
-    private function handleException(ServerRequestInterface $request, Throwable $exception): ResponseInterface
+    private function handleException(ServerRequestInterface $request, Throwable $exception, SpanInterface $span): ResponseInterface
     {
         $response = new Response();
         $statusCode = $this->getStatusCode($exception);
@@ -146,7 +181,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
         ];
 
         // Add debug information in development
-        if ($this->config->isDevelopment()) {
+        if ($this->config->isDebugEnabled()) {
             $errorData['debug'] = [
                 'exception' => get_class($exception),
                 'message' => $exception->getMessage(),
@@ -167,7 +202,7 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
     private function getPublicErrorMessage(Throwable $exception, int $statusCode): string
     {
         // Return safe, user-friendly messages for production
-        if (!$this->config->isDevelopment()) {
+        if (!$this->config->isDebugEnabled()) {
             switch ($statusCode) {
                 case 400:
                     return 'Invalid request. Please check your input and try again.';
