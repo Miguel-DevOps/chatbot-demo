@@ -1,0 +1,119 @@
+services:
+  # Nginx as reverse proxy
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./api/public:/var/www/html/public:ro
+    depends_on:
+      - api
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+
+  # PHP-FPM API service
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: production
+    user: "1000:1000"  # Explicit non-root user (www:www)
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=info
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DATABASE=0
+    volumes:
+      - api-logs:/var/www/html/logs
+      - api-storage:/var/www/html/storage
+    depends_on:
+      - redis
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+      - /var/tmp:noexec,nosuid,size=50m
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+  # Redis cache service
+  redis:
+    image: redis:7-alpine
+    user: "999:999"  # Redis user
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --protected-mode yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=10m
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Optional: Redis monitoring
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      - REDIS_ADDR=redis:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    profiles: ["monitoring"]
+
+volumes:
+  redis-data:
+    driver: local
+  api-logs:
+    driver: local
+  api-storage:
+    driver: local
+
+networks:
+  chatbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

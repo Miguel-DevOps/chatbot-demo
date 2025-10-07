@@ -1,0 +1,45 @@
+# Development files
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+docs/
+.vscode/
+.idea/
+
+# Testing and CI
+tests/
+.phpunit.result.cache
+phpunit.xml
+.github/
+
+# Logs and temporary files
+logs/
+storage/logs/
+*.log
+tmp/
+.tmp/
+
+# Cache and compiled files
+vendor/*/tests/
+vendor/*/docs/
+*.cache
+.cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+*.swp
+*.swo
+*~

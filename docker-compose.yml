@@ -1,29 +1,37 @@
-version: '3.8'
-
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:8080
-    volumes:
-      - ./src:/app/src
-      - ./public:/app/public
-    depends_on:
-      - backend
-
-  backend:
+  api:
     build:
       context: ./api
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8080:8080"
     environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=
+      - REDIS_DATABASE=0
     volumes:
       - ./api:/var/www/html
+    depends_on:
+      - redis
+    networks:
+      - chatbot-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - chatbot-network
+
+volumes:
+  redis-data:
+
+networks:
+  chatbot-network:
+    driver: bridge
