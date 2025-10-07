@@ -22,10 +22,48 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run security audit
+      - name: Setup PHP for Composer audit
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, curl, libxml, simplexml
+
+      - name: Install Composer dependencies
         run: |
-          # Simple audit: fail job if audit reports issues
-          pnpm audit || { echo "❌ Security audit reported issues"; exit 1; }
+          cd api
+          composer install --no-dev --prefer-dist
+
+      - name: Run PHP Composer security audit
+        run: |
+          cd api
+          echo "🔍 Running Composer security audit..."
+          composer audit --format=json > composer-audit.json || COMPOSER_EXIT=$?
+          
+          # Check if there are any security advisories
+          if [ "$COMPOSER_EXIT" != "0" ]; then
+            echo "❌ CRITICAL: Composer audit found security vulnerabilities!"
+            cat composer-audit.json
+            exit 1
+          else
+            echo "✅ Composer audit passed - no security vulnerabilities found"
+          fi
+
+      - name: Run pnpm security audit
+        run: |
+          echo "🔍 Running pnpm security audit..."
+          
+          # Run audit and capture output
+          pnpm audit --audit-level critical --json > pnpm-audit.json || PNPM_EXIT=$?
+          
+          # Check for critical vulnerabilities only
+          if [ "$PNPM_EXIT" != "0" ]; then
+            echo "❌ CRITICAL: pnpm audit found critical vulnerabilities!"
+            echo "📋 Audit details:"
+            cat pnpm-audit.json
+            exit 1
+          else
+            echo "✅ pnpm audit passed - no critical vulnerabilities found"
+          fi
 
       - name: Run linter (if defined)
         run: |
