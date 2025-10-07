@@ -11,8 +11,10 @@ use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
 use ChatbotDemo\Services\ChatService;
+use ChatbotDemo\Services\GenerativeAiClientInterface;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Services\RateLimitService;
+use ChatbotDemo\Services\TracingService;
 use DI\Container;
 use DI\ContainerBuilder;
 use Monolog\Handler\NullHandler;
@@ -40,6 +42,7 @@ abstract class IntegrationTestCase extends TestCase
     protected RequestFactory $requestFactory;
     protected StreamFactory $streamFactory;
     protected UriFactory $uriFactory;
+    protected array $testConfigOverrides = [];
 
     protected function setUp(): void
     {
@@ -59,10 +62,13 @@ abstract class IntegrationTestCase extends TestCase
 
     protected function tearDown(): void
     {
-        parent::tearDown();
-        
         // Limpiar container después de cada test
         DependencyContainer::reset();
+        
+        parent::tearDown();
+        
+        // Reset config overrides al final
+        $this->testConfigOverrides = [];
     }
 
     /**
@@ -87,7 +93,7 @@ abstract class IntegrationTestCase extends TestCase
         // Middleware CORS
         $this->app->add($this->container->get(CorsMiddleware::class));
 
-        // Configurar rutas (mismo que en producción)
+        // Configure routes (same as production)
         $this->setupRoutes();
     }
 
@@ -111,6 +117,31 @@ abstract class IntegrationTestCase extends TestCase
                 return $logger;
             },
 
+            // TracingService para testing (mock simplificado)
+            TracingService::class => function (LoggerInterface $logger) {
+                return new TracingService($logger, 'chatbot-test');
+            },
+
+            // AI Client mock para testing
+            GenerativeAiClientInterface::class => function () {
+                return new class implements GenerativeAiClientInterface {
+                    public function generateContent(string $prompt): string
+                    {
+                        return "Mock AI response for: " . substr($prompt, 0, 50) . "...";
+                    }
+
+                    public function getProviderName(): string
+                    {
+                        return 'test-mock';
+                    }
+
+                    public function isAvailable(): bool
+                    {
+                        return true;
+                    }
+                };
+            },
+
             // Servicios - pueden ser sobrescritos en tests específicos
             KnowledgeBaseService::class => function (AppConfig $config, LoggerInterface $logger) {
                 return $this->createKnowledgeBaseService($config, $logger);
@@ -121,11 +152,12 @@ abstract class IntegrationTestCase extends TestCase
             },
 
             ChatService::class => function (
-                AppConfig $config,
+                GenerativeAiClientInterface $aiClient,
                 KnowledgeBaseService $knowledgeService,
-                LoggerInterface $logger
+                LoggerInterface $logger,
+                TracingService $tracingService
             ) {
-                return $this->createChatService($config, $knowledgeService, $logger);
+                return $this->createChatService($aiClient, $knowledgeService, $logger, $tracingService);
             },
 
             // Controllers con autowiring
@@ -133,13 +165,14 @@ abstract class IntegrationTestCase extends TestCase
                 ChatService $chatService,
                 RateLimitService $rateLimitService,
                 AppConfig $config,
-                LoggerInterface $logger
+                LoggerInterface $logger,
+                TracingService $tracingService
             ) {
-                return new ChatController($chatService, $rateLimitService, $config, $logger);
+                return new ChatController($chatService, $rateLimitService, $config, $logger, $tracingService);
             },
 
-            HealthController::class => function (AppConfig $config, LoggerInterface $logger) {
-                return new HealthController($config, $logger);
+            HealthController::class => function (AppConfig $config, LoggerInterface $logger, RateLimitService $rateLimitService) {
+                return new HealthController($config, $logger, $rateLimitService);
             },
 
             // Middleware
@@ -147,8 +180,8 @@ abstract class IntegrationTestCase extends TestCase
                 return new CorsMiddleware($config, $logger);
             },
 
-            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config) {
-                return new ErrorHandlerMiddleware($logger, $config);
+            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracingService $tracingService) {
+                return new ErrorHandlerMiddleware($logger, $config, $tracingService);
             }
         ]);
 
@@ -231,7 +264,7 @@ abstract class IntegrationTestCase extends TestCase
                 'timeout' => 30
             ],
             'knowledge_base' => [
-                'path' => __DIR__ . '/../../knowledge_test',
+                'path' => __DIR__ . '/knowledge_test',
                 'cache_enabled' => false, // Disable cache en tests
                 'cache_ttl' => 3600
             ],
@@ -252,7 +285,49 @@ abstract class IntegrationTestCase extends TestCase
             ]
         ];
 
+        // Permitir overrides de configuración para tests específicos
+        if (isset($this->testConfigOverrides)) {
+            $testConfig = $this->mergeConfigArrays($testConfig, $this->testConfigOverrides);
+        }
+
         return AppConfig::createFromArray($testConfig);
+    }
+
+    /**
+     * Merge profundo de arrays de configuración que sobrescribe valores escalares
+     */
+    private function mergeConfigArrays(array $base, array $overrides): array
+    {
+        foreach ($overrides as $key => $value) {
+            if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
+                $base[$key] = $this->mergeConfigArrays($base[$key], $value);
+            } else {
+                $base[$key] = $value;
+            }
+        }
+        return $base;
+    }
+
+    /**
+     * Permite establecer configuración personalizada para un test específico
+     */
+    protected function setTestConfigOverrides(array $overrides): void
+    {
+        $this->testConfigOverrides = $overrides;
+    }
+
+    /**
+     * Reconfigura la aplicación con nuevos overrides (útil para tests que necesitan cambiar configuración)
+     */
+    protected function reconfigureApp(array $configOverrides): void
+    {
+        $this->testConfigOverrides = $configOverrides;
+        
+        // Reset container con nueva configuración
+        DependencyContainer::reset();
+        
+        // Reconfigurar aplicación
+        $this->setupApplication();
     }
 
     /**
@@ -260,17 +335,21 @@ abstract class IntegrationTestCase extends TestCase
      */
     protected function createKnowledgeBaseService(AppConfig $config, LoggerInterface $logger): KnowledgeBaseService
     {
-        return new KnowledgeBaseService($config, $logger);
+        // Use FilesystemKnowledgeProvider for testing
+        $knowledgeProvider = new \ChatbotDemo\Repositories\FilesystemKnowledgeProvider($config, $logger);
+        return new KnowledgeBaseService($config, $logger, $knowledgeProvider);
     }
 
     protected function createRateLimitService(AppConfig $config, LoggerInterface $logger): RateLimitService
     {
-        return new RateLimitService($config, $logger);
+        // Use SqliteRateLimitStorage for testing
+        $storage = new \ChatbotDemo\Repositories\SqliteRateLimitStorage($config, $logger);
+        return new RateLimitService($config, $logger, $storage);
     }
 
-    protected function createChatService(AppConfig $config, KnowledgeBaseService $knowledgeService, LoggerInterface $logger): ChatService
+    protected function createChatService(GenerativeAiClientInterface $aiClient, KnowledgeBaseService $knowledgeService, LoggerInterface $logger, TracingService $tracingService): ChatService
     {
-        return new ChatService($config, $knowledgeService, $logger);
+        return new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
     }
 
     /**
@@ -280,7 +359,8 @@ abstract class IntegrationTestCase extends TestCase
         string $method,
         string $uri,
         array $headers = [],
-        string $body = ''
+        string $body = '',
+        array $serverParams = []
     ): ServerRequestInterface {
         $request = $this->requestFactory->createRequest($method, $uri);
         
@@ -292,6 +372,21 @@ abstract class IntegrationTestCase extends TestCase
             $stream = $this->streamFactory->createStream($body);
             $request = $request->withBody($stream);
         }
+        
+        // Agregar parámetros del servidor por defecto para testing
+        $defaultServerParams = [
+            'REMOTE_ADDR' => '127.0.0.1',
+            'SERVER_NAME' => 'localhost',
+            'REQUEST_METHOD' => $method,
+            'REQUEST_URI' => $uri
+        ];
+        $finalServerParams = array_merge($defaultServerParams, $serverParams);
+        
+        // Usar reflection para establecer serverParams ya que no hay método público
+        $reflection = new \ReflectionClass($request);
+        $property = $reflection->getProperty('serverParams');
+        $property->setAccessible(true);
+        $property->setValue($request, $finalServerParams);
         
         return $request;
     }

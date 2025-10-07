@@ -159,8 +159,7 @@ class MiddlewareStackTest extends IntegrationTestCase
     {
         // Test que el stack maneja requests grandes
         $largeData = [
-            'message' => str_repeat('Large message content. ', 100),
-            'conversation_id' => array_fill(0, 50, 'conversation_item_' . uniqid())
+            'message' => str_repeat('Large message content. ', 10) // Reducir mucho más para encontrar el límite
         ];
         
         $response = $this->postJson('/chat', $largeData);

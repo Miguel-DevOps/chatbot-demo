@@ -1,35 +1,25 @@
 <?php
 namespace ChatbotDemo\Tests\Integration;
 
-use PHPUnit\Framework\TestCase;
-
-class ProjectTest extends TestCase {
-    private function getServerUrl(): string
-    {
-        return $_ENV['TEST_SERVER_URL'] ?? 'http://localhost:8080';
-    }
+class ProjectTest extends IntegrationTestCase {
     
     public function testHealthEndpoint() {
-        $url = $this->getServerUrl() . '/health.php?plain=1';
-        $response = @file_get_contents($url);
-        $this->assertNotFalse($response, 'No se pudo conectar a health.php');
-        $this->assertStringContainsString('OK', $response);
+        // Usar helper get() en lugar de file_get_contents
+        $response = $this->get('/health.php?plain=1');
+        
+        $this->assertEquals(200, $response->getStatusCode(), 'No se pudo conectar a health.php');
+        
+        $body = (string) $response->getBody();
+        $this->assertStringContainsString('OK', $body);
     }
 
     public function testChatEndpoint() {
-        $data = ["message" => "Hola"];
-        $options = [
-            'http' => [
-                'method'  => 'POST',
-                'header'  => 'Content-type: application/json',
-                'content' => json_encode($data)
-            ]
-        ];
-        $context  = stream_context_create($options);
-        $url = $this->getServerUrl() . '/chat.php';
-        $result = @file_get_contents($url, false, $context);
-        $this->assertNotFalse($result, 'No se pudo conectar a chat.php');
-        $json = json_decode($result, true);
+        // Usar helper postJson() en lugar de file_get_contents
+        $response = $this->postJson('/chat.php', ['message' => 'Hola']);
+        
+        $this->assertEquals(200, $response->getStatusCode(), 'No se pudo conectar a chat.php');
+        
+        $json = $this->getJsonResponse($response);
         $this->assertTrue(isset($json['success']) && $json['success'] === true, 'Respuesta no exitosa');
         $this->assertNotEmpty($json['response'] ?? '', 'Respuesta vacía del chatbot');
     }

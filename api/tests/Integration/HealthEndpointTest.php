@@ -83,7 +83,7 @@ class HealthEndpointTest extends IntegrationTestCase
         // Test que el middleware CORS está funcionando
         $response = $this->get('/health');
         
-        // Verificar que tenemos headers CORS básicos
+        // Verify that we have basic CORS headers
         $this->assertTrue($response->hasHeader('Access-Control-Allow-Origin'));
     }
 
@@ -115,7 +115,7 @@ class HealthEndpointTest extends IntegrationTestCase
         $request = $this->createRequest('PUT', '/health');
         $response = $this->runApp($request);
         
-        // Debería ser manejado por el error middleware, no un 500
+        // Should be handled by error middleware, not a 500
         $this->assertNotEquals(500, $response->getStatusCode());
     }
 }

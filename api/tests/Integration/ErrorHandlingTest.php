@@ -33,7 +33,7 @@ class ErrorHandlingTest extends IntegrationTestCase
         $request = $this->createRequest('PUT', '/health');
         $response = $this->runApp($request);
         
-        // Debería ser manejado como 404 por el handler genérico
+        // Should be handled as 404 by the generic handler
         $this->assertEquals(404, $response->getStatusCode());
         
         $data = $this->getJsonResponse($response);
@@ -52,7 +52,7 @@ class ErrorHandlingTest extends IntegrationTestCase
         
         $response = $this->runApp($request);
         
-        // Error de parsing debería ser manejado
+        // Parsing error should be handled
         $this->assertNotEquals(500, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
@@ -86,7 +86,7 @@ class ErrorHandlingTest extends IntegrationTestCase
             'conversation_id' => []
         ]);
         
-        // Debería ser rechazado o manejado apropiadamente
+        // Should be rejected or handled appropriately
         $this->assertNotEquals(500, $response->getStatusCode());
         
         if ($response->getStatusCode() !== 200) {

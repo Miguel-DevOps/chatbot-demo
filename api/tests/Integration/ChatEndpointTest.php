@@ -6,7 +6,9 @@ namespace ChatbotDemo\Tests\Integration;
 
 use ChatbotDemo\Config\AppConfig;
 use ChatbotDemo\Services\ChatService;
+use ChatbotDemo\Services\GenerativeAiClientInterface;
 use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Services\TracingService;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -33,7 +35,7 @@ class ChatEndpointTest extends IntegrationTestCase
     /**
      * Override del factory method para inyectar el mock
      */
-    protected function createChatService(AppConfig $config, KnowledgeBaseService $knowledgeService, LoggerInterface $logger): ChatService
+    protected function createChatService(GenerativeAiClientInterface $aiClient, KnowledgeBaseService $knowledgeService, LoggerInterface $logger, TracingService $tracingService): ChatService
     {
         return $this->mockChatService;
     }
@@ -241,32 +243,21 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointRateLimitingIntegration(): void
     {
-        // Test que el rate limiting está integrado (usando servicio real)
-        // Nota: Este test usa el servicio real de rate limiting para validar integración
+        // Cleanup cualquier DB previa
+        @unlink('/tmp/test_rate_limit_integration.db');
         
-        // Crear configuración con límite muy bajo para testing
-        $testConfig = [
+        // Test que el rate limiting está integrado (usando servicio real)
+        // Reconfigurar con límite muy bajo para testing
+        $this->reconfigureApp([
             'rate_limit' => [
                 'enabled' => true,
                 'max_requests' => 1, // Solo 1 request permitido
                 'time_window' => 900,
                 'database_path' => '/tmp/test_rate_limit_integration.db'
             ]
-        ];
+        ]);
         
-        // Resetear container con nueva configuración
-        $this->tearDown();
-        $this->setUp();
-        
-        // Configurar mock para primera request
-        $this->mockChatService
-            ->expects($this->exactly(1))
-            ->method('processMessage')
-            ->willReturn([
-                'response' => 'First response',
-                'timestamp' => date('c'),
-                'model' => 'gemini-pro'
-            ]);
+        // No configurar mocks - usar servicios reales para este test
 
         // Primera request debe funcionar
         $response1 = $this->postJson('/chat', [
@@ -281,12 +272,12 @@ class ChatEndpointTest extends IntegrationTestCase
             'message' => 'Second message',
             'conversation_id' => []
         ]);
-        
+
         $this->assertEquals(429, $response2->getStatusCode());
         
         $data = $this->getJsonResponse($response2);
         $this->assertArrayHasKey('error', $data);
-        $this->assertStringContainsString('rate limit', strtolower($data['error']));
+        $this->assertStringContainsString('límite', strtolower($data['error'])); // Texto en español
         
         // Cleanup
         @unlink('/tmp/test_rate_limit_integration.db');
