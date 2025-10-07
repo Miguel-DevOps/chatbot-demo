@@ -8,6 +8,7 @@ use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\DemoAiClient;
 use ChatbotDemo\Services\OpenAiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Services\TracingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -39,13 +40,13 @@ class AiProviderSwitchingTest extends TestCase
         
         // Test with Demo AI
         $demoClient = new DemoAiClient();
-        $chatServiceWithDemo = new ChatService($demoClient, $this->knowledgeService, new NullLogger());
+        $chatServiceWithDemo = new ChatService($demoClient, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
         
         $demoResult = $chatServiceWithDemo->processMessage($userMessage);
         
         // Test with OpenAI-like client
         $openAiClient = new OpenAiClient('demo', new NullLogger());
-        $chatServiceWithOpenAi = new ChatService($openAiClient, $this->knowledgeService, new NullLogger());
+        $chatServiceWithOpenAi = new ChatService($openAiClient, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
         
         $openAiResult = $chatServiceWithOpenAi->processMessage($userMessage);
         
@@ -92,7 +93,7 @@ class AiProviderSwitchingTest extends TestCase
         ];
         
         foreach ($providers as $providerName => $client) {
-            $chatService = new ChatService($client, $this->knowledgeService, new NullLogger());
+            $chatService = new ChatService($client, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
             $result = $chatService->processMessage("Test with {$providerName}");
             
             $this->assertTrue($result['success'], "Failed with provider: {$providerName}");

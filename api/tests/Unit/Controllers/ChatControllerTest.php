@@ -11,7 +11,9 @@ use Slim\Psr7\Headers;
 use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\RateLimitService;
+use ChatbotDemo\Services\TracingService;
 use ChatbotDemo\Config\AppConfig;
+use OpenTelemetry\API\Trace\SpanInterface;
 use Psr\Log\LoggerInterface;
 
 class ChatControllerTest extends TestCase
@@ -21,6 +23,7 @@ class ChatControllerTest extends TestCase
     private $mockRateLimitService;
     private $mockConfig;
     private $mockLogger;
+    private $mockTracingService;
 
     protected function setUp(): void
     {
@@ -31,19 +34,33 @@ class ChatControllerTest extends TestCase
         $this->mockRateLimitService = Mockery::mock(RateLimitService::class);
         $this->mockConfig = Mockery::mock(AppConfig::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);
+        $this->mockTracingService = Mockery::mock(TracingService::class);
         
-        // Configurar expectativas básicas del logger
+        // Configure basic expectations for config
+        $this->mockConfig->shouldReceive('isDevelopment')->byDefault()->andReturn(false);
+        
+        // Configure basic expectations for logger
         $this->mockLogger->shouldReceive('info')->byDefault();
         $this->mockLogger->shouldReceive('warning')->byDefault();
         $this->mockLogger->shouldReceive('error')->byDefault();
         $this->mockLogger->shouldReceive('debug')->byDefault();
+        
+        // Configure basic expectations for tracing service
+        $mockSpan = Mockery::mock(SpanInterface::class);
+        $this->mockTracingService->shouldReceive('startSpan')->byDefault()->andReturn($mockSpan);
+        $this->mockTracingService->shouldReceive('finishSpan')->byDefault();
+        $this->mockTracingService->shouldReceive('finishSpanWithError')->byDefault();
+        $this->mockTracingService->shouldReceive('addAttribute')->byDefault()->andReturnSelf();
+        $this->mockTracingService->shouldReceive('addSpanEvent')->byDefault();
+        $this->mockTracingService->shouldReceive('recordException')->byDefault();
         
         // Crear instancia del ChatController con dependencias mockeadas
         $this->chatController = new ChatController(
             $this->mockChatService,
             $this->mockRateLimitService,
             $this->mockConfig,
-            $this->mockLogger
+            $this->mockLogger,
+            $this->mockTracingService
         );
     }
 
@@ -64,7 +81,7 @@ class ChatControllerTest extends TestCase
         $uri = new Uri('http', 'localhost', null, '/chat');
         $headers = new Headers(['Content-Type' => 'application/json']);
         
-        return new Request(
+        $request = new Request(
             'POST',
             $uri,
             $headers,
@@ -72,6 +89,9 @@ class ChatControllerTest extends TestCase
             [],
             $streamObject
         );
+        
+        // Set parsed body to simulate body parsing middleware
+        return $request->withParsedBody($data);
     }
 
     public function testChatBasicSuccess(): void
@@ -105,7 +125,7 @@ class ChatControllerTest extends TestCase
         // Mock del chat service
         $this->mockChatService
             ->shouldReceive('processMessage')
-            ->with($message)
+            ->with($message, Mockery::type(SpanInterface::class))
             ->once()
             ->andReturn($expectedChatResponse);
 

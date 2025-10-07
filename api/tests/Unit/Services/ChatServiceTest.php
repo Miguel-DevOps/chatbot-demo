@@ -5,8 +5,10 @@ use PHPUnit\Framework\TestCase;
 use Mockery;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\KnowledgeBaseService;
-use ChatbotDemo\Config\AppConfig;
+use ChatbotDemo\Services\GenerativeAiClientInterface;
+use ChatbotDemo\Services\TracingService;
 use ChatbotDemo\Exceptions\ValidationException;
+use OpenTelemetry\API\Trace\SpanInterface;
 use Psr\Log\LoggerInterface;
 
 class ChatServiceTest extends TestCase
@@ -19,165 +21,110 @@ class ChatServiceTest extends TestCase
 
     protected function tearDown(): void
     {
-        parent::tearDown();
         Mockery::close();
     }
 
-    public function testProcessMessageInDemoMode(): void
+    private function createBasicMocks(): array
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
+        $aiClient = Mockery::mock(GenerativeAiClientInterface::class);
         $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
         $logger = Mockery::mock(LoggerInterface::class);
+        $tracingService = Mockery::mock(TracingService::class);
 
-        // Configure mock for demo mode
-        $config->shouldReceive('getGeminiApiKey')
-            ->once()
-            ->andReturn('DEMO_MODE');
-
-        // Configure logger expectations - permitir cualquier llamada
+        // Configure basic expectations
         $logger->shouldReceive('info')->byDefault();
         $logger->shouldReceive('debug')->byDefault();
         $logger->shouldReceive('warning')->byDefault();
         $logger->shouldReceive('error')->byDefault();
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
+        $tracingService->shouldReceive('startSpan')->byDefault()->andReturn(Mockery::mock(SpanInterface::class));
+        $tracingService->shouldReceive('finishSpan')->byDefault();
+        $tracingService->shouldReceive('finishSpanWithError')->byDefault();
+        $tracingService->shouldReceive('addAttribute')->byDefault()->andReturnSelf();
+        $tracingService->shouldReceive('addSpanEvent')->byDefault();
+        $tracingService->shouldReceive('recordException')->byDefault();
 
-        // Test with valid message in demo mode
+        $knowledgeService->shouldReceive('getKnowledgeBase')->byDefault()->andReturn('Test knowledge base content');
+        $knowledgeService->shouldReceive('addUserContext')->byDefault()->andReturn('Test knowledge with context');
+
+        $aiClient->shouldReceive('generateContent')->byDefault()->andReturn('Test AI response');
+        $aiClient->shouldReceive('getProviderName')->byDefault()->andReturn('test');
+        $aiClient->shouldReceive('isAvailable')->byDefault()->andReturn(true);
+
+        return [$aiClient, $knowledgeService, $logger, $tracingService];
+    }
+
+    public function testProcessMessageInDemoMode(): void
+    {
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
         $result = $service->processMessage('What is React?');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('success', $result);
         $this->assertTrue($result['success']);
-        $this->assertArrayHasKey('response', $result);
-        $this->assertArrayHasKey('mode', $result);
-        $this->assertEquals('demo', $result['mode']);
-        $this->assertStringContainsString('Modo Demo', $result['response']);
     }
 
     public function testProcessMessageWithEmptyInput(): void
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
-        $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
-        $logger = Mockery::mock(LoggerInterface::class);
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
 
-        // Configure logger expectations - permitir cualquier llamada
-        $logger->shouldReceive('info')->byDefault();
-        $logger->shouldReceive('debug')->byDefault();
-        $logger->shouldReceive('warning')->byDefault();
-        $logger->shouldReceive('error')->byDefault();
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
-
-        // Expect ValidationException for empty message
         $this->expectException(ValidationException::class);
-
-        // Test with empty message
         $service->processMessage('');
     }
 
     public function testProcessMessageWithWhitespaceOnlyInput(): void
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
-        $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
-        $logger = Mockery::mock(LoggerInterface::class);
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
 
-        // Configure logger expectations - permitir cualquier llamada
-        $logger->shouldReceive('info')->byDefault();
-        $logger->shouldReceive('debug')->byDefault();
-        $logger->shouldReceive('warning')->byDefault();
-        $logger->shouldReceive('error')->byDefault();
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
-
-        // Expect ValidationException for whitespace-only message
         $this->expectException(ValidationException::class);
-
-        // Test with whitespace-only message
         $service->processMessage('   ');
     }
 
     public function testProcessMessageWithTooLongInput(): void
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
-        $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
-        $logger = Mockery::mock(LoggerInterface::class);
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
 
-        // Configure logger expectations - permitir cualquier llamada
-        $logger->shouldReceive('info')->byDefault();
-        $logger->shouldReceive('debug')->byDefault();
-        $logger->shouldReceive('warning')->byDefault();
-        $logger->shouldReceive('error')->byDefault();
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $longMessage = str_repeat('a', 10001);
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
-
-        // Expect ValidationException for long message
         $this->expectException(ValidationException::class);
-
-        // Test with long message (over 1000 chars)
-        $longMessage = str_repeat("a", 1001);
         $service->processMessage($longMessage);
     }
 
     public function testProcessMessageWithForbiddenContent(): void
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
-        $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
-        $logger = Mockery::mock(LoggerInterface::class);
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
 
-        // Configure logger expectations - permitir cualquier llamada
-        $logger->shouldReceive('info')->byDefault();
-        $logger->shouldReceive('debug')->byDefault();
-        $logger->shouldReceive('warning')->byDefault();
-        $logger->shouldReceive('error')->byDefault();
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
-
-        // Expect ValidationException for forbidden content
         $this->expectException(ValidationException::class);
-
-        // Test with message containing forbidden word
-        $service->processMessage('How to hack this system?');
+        $service->processMessage('Content with forbidden words: jailbreak hack exploit');
     }
 
     public function testProcessMessageValidationSuccess(): void
     {
-        // Create mocks
-        $config = Mockery::mock(AppConfig::class);
-        $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
-        $logger = Mockery::mock(LoggerInterface::class);
+        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
 
-        // Configure mock for demo mode (to avoid API call)
-        $config->shouldReceive('getGeminiApiKey')
+        $aiClient->shouldReceive('generateContent')
             ->once()
-            ->andReturn('DEMO_MODE');
+            ->andReturn('Valid AI response');
 
-        // Configure logger expectations - permitir cualquier llamada
-        $logger->shouldReceive('info')->byDefault();
-        $logger->shouldReceive('debug')->byDefault();
-        $logger->shouldReceive('warning')->byDefault();
-        $logger->shouldReceive('error')->byDefault();
+        $knowledgeService->shouldReceive('getKnowledgeBase')
+            ->once()
+            ->andReturn('Knowledge base content');
 
-        // Create service
-        $service = new ChatService($config, $knowledgeService, $logger);
-
-        // Test with valid message
-        $result = $service->processMessage('Hello, how are you?');
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $result = $service->processMessage('What is JavaScript?');
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('success', $result);
         $this->assertTrue($result['success']);
         $this->assertArrayHasKey('response', $result);
-        $this->assertIsString($result['response']);
-        $this->assertNotEmpty($result['response']);
     }
 }

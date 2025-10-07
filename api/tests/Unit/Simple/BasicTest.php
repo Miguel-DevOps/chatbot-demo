@@ -4,7 +4,7 @@ namespace ChatbotDemo\Tests\Unit\Simple;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tests básicos para verificar que el framework funciona
+ * Basic tests to verify that the framework works
  */
 class BasicTest extends TestCase
 {

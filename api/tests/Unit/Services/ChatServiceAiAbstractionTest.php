@@ -7,6 +7,7 @@ namespace ChatbotDemo\Tests\Unit\Services;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\DemoAiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Services\TracingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -19,11 +20,15 @@ class ChatServiceAiAbstractionTest extends TestCase
     private ChatService $chatService;
     private DemoAiClient $aiClient;
     private KnowledgeBaseService $knowledgeService;
+    private TracingService $tracingService;
 
     protected function setUp(): void
     {
         // Create demo AI client
         $this->aiClient = new DemoAiClient();
+        
+        // Create tracing service
+        $this->tracingService = new TracingService(new NullLogger(), 'test');
         
         // Mock knowledge base service
         $this->knowledgeService = $this->createMock(KnowledgeBaseService::class);
@@ -40,7 +45,8 @@ class ChatServiceAiAbstractionTest extends TestCase
         $this->chatService = new ChatService(
             $this->aiClient,
             $this->knowledgeService,
-            new NullLogger()
+            new NullLogger(),
+            $this->tracingService
         );
     }
 

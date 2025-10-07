@@ -5,6 +5,7 @@ use PHPUnit\Framework\TestCase;
 use Mockery;
 use ChatbotDemo\Services\RateLimitService;
 use ChatbotDemo\Repositories\RateLimitRepository;
+use ChatbotDemo\Repositories\RateLimitStorageInterface;
 use ChatbotDemo\Config\AppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -37,8 +38,18 @@ class RateLimitServiceTest extends TestCase
         $this->mockLogger->shouldReceive('warning')->byDefault();
         $this->mockLogger->shouldReceive('error')->byDefault();
         
+        // Mock del storage
+        $mockStorage = Mockery::mock(RateLimitStorageInterface::class);
+        $mockStorage->shouldReceive('getRequestCount')->byDefault()->andReturn(0);
+        $mockStorage->shouldReceive('getRequestsCount')->byDefault()->andReturn(0);
+        $mockStorage->shouldReceive('incrementRequestCount')->byDefault();
+        $mockStorage->shouldReceive('resetRequestCount')->byDefault();
+        $mockStorage->shouldReceive('isHealthy')->byDefault()->andReturn(true);
+        $mockStorage->shouldReceive('cleanupExpiredRequests')->byDefault();
+        $mockStorage->shouldReceive('logRequest')->byDefault();
+        
         // Crear instancia del RateLimitService con dependencias mockeadas
-        $this->rateLimitService = new RateLimitService($this->mockConfig, $this->mockLogger);
+        $this->rateLimitService = new RateLimitService($this->mockConfig, $this->mockLogger, $mockStorage);
     }
 
     protected function tearDown(): void
@@ -70,7 +81,7 @@ class RateLimitServiceTest extends TestCase
         $request->shouldReceive('getServerParams')
             ->andReturn(['REMOTE_ADDR' => '192.168.1.2']);
         
-        // Act & Assert - no debería lanzar excepción
+        // Act & Assert - should not throw exception
         $this->rateLimitService->enforceRateLimit($request);
         $this->assertTrue(true); // Si llegamos aquí, no hubo excepción
     }

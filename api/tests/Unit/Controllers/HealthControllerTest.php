@@ -10,6 +10,7 @@ use Slim\Psr7\Headers;
 use Slim\Psr7\Stream;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Services\RateLimitService;
 use ChatbotDemo\Config\AppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -18,6 +19,7 @@ class HealthControllerTest extends TestCase
     private HealthController $healthController;
     private $mockConfig;
     private $mockLogger;
+    private $mockRateLimitService;
 
     protected function setUp(): void
     {
@@ -26,9 +28,10 @@ class HealthControllerTest extends TestCase
         // Mock de configuración y logger
         $this->mockConfig = Mockery::mock(AppConfig::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);
+        $this->mockRateLimitService = Mockery::mock(RateLimitService::class);
         
         // Crear instancia del HealthController con dependencias mockeadas
-        $this->healthController = new HealthController($this->mockConfig, $this->mockLogger);
+        $this->healthController = new HealthController($this->mockConfig, $this->mockLogger, $this->mockRateLimitService);
     }
 
     protected function tearDown(): void
@@ -46,7 +49,7 @@ class HealthControllerTest extends TestCase
         $request = new Request('GET', $uri, $headers, [], [], $stream);
         $response = new Response();
         
-        // Mock básico de configuración
+        // Basic configuration mock
         $this->mockConfig
             ->shouldReceive('get')
             ->andReturn('test-value');

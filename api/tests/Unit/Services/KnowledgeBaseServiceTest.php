@@ -4,6 +4,7 @@ namespace ChatbotDemo\Tests\Unit\Services;
 use PHPUnit\Framework\TestCase;
 use Mockery;
 use ChatbotDemo\Services\KnowledgeBaseService;
+use ChatbotDemo\Repositories\KnowledgeProviderInterface;
 use ChatbotDemo\Config\AppConfig;
 use Psr\Log\LoggerInterface;
 
@@ -42,6 +43,15 @@ class KnowledgeBaseServiceTest extends TestCase
         $mockLogger->shouldReceive('warning')->byDefault();
         $mockLogger->shouldReceive('error')->byDefault();
         
+        // Mock del knowledge provider
+        $mockKnowledgeProvider = Mockery::mock(KnowledgeProviderInterface::class);
+        $mockKnowledgeProvider->shouldReceive('loadKnowledge')
+            ->byDefault()
+            ->andReturn("# Servicios\nOfrecemos consultoría estratégica y desarrollo de software.\n\n# Precios\nNuestros precios son competitivos en el mercado.");
+        $mockKnowledgeProvider->shouldReceive('getKnowledge')
+            ->byDefault()
+            ->andReturn("# Servicios\nOfrecemos consultoría estratégica y desarrollo de software.\n\n# Precios\nNuestros precios son competitivos en el mercado.");
+        
         // Crear archivos de conocimiento de prueba
         file_put_contents(
             $this->testKnowledgeDir . '/servicios.md',
@@ -53,7 +63,7 @@ class KnowledgeBaseServiceTest extends TestCase
             "# Precios\nNuestros precios son competitivos en el mercado."
         );
         
-        $this->knowledgeBaseService = new KnowledgeBaseService($mockConfig, $mockLogger);
+        $this->knowledgeBaseService = new KnowledgeBaseService($mockConfig, $mockLogger, $mockKnowledgeProvider);
     }
 
     protected function tearDown(): void
@@ -104,7 +114,7 @@ class KnowledgeBaseServiceTest extends TestCase
 
     public function testInvalidateCache(): void
     {
-        // Act & Assert - no debería lanzar excepción
+        // Act & Assert - should not throw exception
         $this->knowledgeBaseService->invalidateCache();
         $this->assertTrue(true); // Si llegamos aquí, no hubo excepción
     }

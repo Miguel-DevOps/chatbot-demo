@@ -27,7 +27,7 @@ class RateLimitStorageAbstractionTest extends TestCase
         $this->config = $this->createMock(AppConfig::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         
-        // Configurar valores por defecto
+        // Configure default values
         $this->config->method('get')
             ->willReturnMap([
                 ['rate_limit.max_requests', null, 10],

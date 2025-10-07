@@ -5,7 +5,7 @@ use PHPUnit\Framework\TestCase;
 use ChatbotDemo\Config\AppConfig;
 
 /**
- * Test básico para verificar que AppConfig funciona
+ * Basic test to verify that AppConfig works
  */
 class AppConfigTest extends TestCase
 {
@@ -19,11 +19,11 @@ class AppConfigTest extends TestCase
     {
         $config = AppConfig::getInstance();
         
-        // Test con valor por defecto
+        // Test with default value
         $defaultValue = $config->get('non.existing.key', 'default');
         $this->assertEquals('default', $defaultValue);
         
-        // Test con valor null por defecto
+        // Test with null default value
         $nullValue = $config->get('non.existing.key');
         $this->assertNull($nullValue);
     }
@@ -32,10 +32,10 @@ class AppConfigTest extends TestCase
     {
         $config = AppConfig::getInstance();
         
-        // Verificar que la configuración se puede instanciar sin errores
+        // Verify that configuration can be instantiated without errors
         $this->assertIsObject($config);
         
-        // Test básico de método existente
+        // Basic test of existing method
         $this->assertTrue(method_exists($config, 'get'));
         $this->assertTrue(method_exists($config, 'getGeminiApiKey'));
     }
