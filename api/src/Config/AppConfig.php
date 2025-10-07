@@ -50,12 +50,17 @@ class AppConfig
                 'debug' => $this->getEnv('DEBUG_MODE', 'false') === 'true',
                 'timezone' => 'UTC'
             ],
-            'gemini' => [
-                'api_key' => $this->getEnv('GEMINI_API_KEY'),
-                'model' => 'gemini-pro',
-                'timeout' => 30,
-                'max_tokens' => 2048,
-                'temperature' => 0.7
+            'ai' => [
+                'provider' => $_ENV['AI_PROVIDER'] ?? 'demo',
+                'api_key' => $_ENV['GEMINI_API_KEY'] ?? null,
+                'model' => $_ENV['AI_MODEL'] ?? 'gemini-1.5-flash',
+            ],
+            
+            'redis' => [
+                'host' => $_ENV['REDIS_HOST'] ?? 'localhost',
+                'port' => (int)($_ENV['REDIS_PORT'] ?? 6379),
+                'password' => $_ENV['REDIS_PASSWORD'] ?? null,
+                'database' => (int)($_ENV['REDIS_DATABASE'] ?? 0),
             ],
             'rate_limit' => [
                 'max_requests' => (int) $this->getEnv('RATE_LIMIT_MAX_REQUESTS', '50'),

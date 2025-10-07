@@ -7,6 +7,7 @@ namespace ChatbotDemo\Controllers;
 use ChatbotDemo\Config\AppConfig;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\RateLimitService;
+use ChatbotDemo\Services\TracingService;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
@@ -23,23 +24,33 @@ class ChatController
     private RateLimitService $rateLimitService;
     private AppConfig $config;
     private LoggerInterface $logger;
+    private TracingService $tracingService;
 
     public function __construct(
         ChatService $chatService, 
         RateLimitService $rateLimitService, 
         AppConfig $config, 
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        TracingService $tracingService
     ) {
         $this->chatService = $chatService;
         $this->rateLimitService = $rateLimitService;
         $this->config = $config;
         $this->logger = $logger;
+        $this->tracingService = $tracingService;
     }
 
     public function chat(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $requestId = uniqid('req_', true);
         $startTime = microtime(true);
+        
+        // Start tracing span for chat request
+        $span = $this->tracingService->startSpan('chat_request', [
+            'request_id' => $requestId,
+            'http.method' => $request->getMethod(),
+            'user_agent' => $request->getHeaderLine('User-Agent')
+        ]);
         
         $this->logger->info('Chat request received', [
             'request_id' => $requestId,
@@ -55,11 +66,23 @@ class ChatController
                     'request_id' => $requestId,
                     'method' => $request->getMethod()
                 ]);
-                return $this->errorResponse($response, 'Método no permitido', 405);
+                
+                $this->tracingService->addSpanEvent($span, 'invalid_method', [
+                    'method' => $request->getMethod()
+                ]);
+                
+                $errorResponse = $this->errorResponse($response, 'Método no permitido', 405);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 405]);
+                return $errorResponse;
             }
 
-            // Check rate limit
+            // Check rate limit with tracing
+            $this->tracingService->addSpanEvent($span, 'rate_limit_check_start');
             $rateLimitResult = $this->rateLimitService->checkRateLimit($request);
+            $this->tracingService->addSpanEvent($span, 'rate_limit_check_complete', [
+                'allowed' => $rateLimitResult['allowed'],
+                'remaining' => $rateLimitResult['remaining']
+            ]);
             
             if (!$rateLimitResult['allowed']) {
                 $this->logger->warning('Rate limit exceeded', [
@@ -69,6 +92,11 @@ class ChatController
                 ]);
                 
                 $errorResponse = $this->errorResponse($response, 'Límite de requests excedido', 429);
+                $this->tracingService->finishSpan($span, [
+                    'http.status_code' => 429,
+                    'rate_limit_exceeded' => true
+                ]);
+                
                 return $errorResponse
                     ->withHeader('X-RateLimit-Limit', (string) $rateLimitResult['limit'])
                     ->withHeader('X-RateLimit-Remaining', (string) $rateLimitResult['remaining'])
@@ -99,12 +127,21 @@ class ChatController
                         'json_error' => json_last_error_msg(),
                         'body_preview' => substr($body, 0, 100)
                     ]);
-                    return $this->errorResponse($response, 'JSON inválido', 400);
+                    
+                    $this->tracingService->addSpanEvent($span, 'invalid_json', [
+                        'json_error' => json_last_error_msg()
+                    ]);
+                    
+                    $errorResponse = $this->errorResponse($response, 'JSON inválido', 400);
+                    $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                    return $errorResponse;
                 }
             }
             
             if (!is_array($data)) {
-                return $this->errorResponse($response, 'JSON inválido', 400);
+                $errorResponse = $this->errorResponse($response, 'JSON inválido', 400);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                return $errorResponse;
             }
 
             if (!isset($data['message'])) {
@@ -112,11 +149,72 @@ class ChatController
                     'request_id' => $requestId,
                     'received_fields' => array_keys($data)
                 ]);
-                return $this->errorResponse($response, 'Campo "message" requerido', 400);
+                
+                $this->tracingService->addSpanEvent($span, 'missing_message_field');
+                $errorResponse = $this->errorResponse($response, 'Campo "message" requerido', 400);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                return $errorResponse;
             }
 
-            // Process message
-            $result = $this->chatService->processMessage($data['message']);
+            if (!is_string($data['message'])) {
+                $this->logger->warning('Invalid message type', [
+                    'request_id' => $requestId,
+                    'message_type' => gettype($data['message'])
+                ]);
+                
+                $this->tracingService->addSpanEvent($span, 'invalid_message_type');
+                $errorResponse = $this->errorResponse($response, 'El campo "message" debe ser una cadena de texto', 400);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                return $errorResponse;
+            }
+
+            if (trim($data['message']) === '') {
+                $this->logger->warning('Empty message', [
+                    'request_id' => $requestId
+                ]);
+                
+                $this->tracingService->addSpanEvent($span, 'empty_message');
+                $errorResponse = $this->errorResponse($response, 'El mensaje no puede estar vacío', 400);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                return $errorResponse;
+            }
+
+            // Validar tamaño del mensaje (máximo 8KB)
+            if (strlen($data['message']) > 8192) {
+                $this->logger->warning('Message too large', [
+                    'request_id' => $requestId,
+                    'message_length' => strlen($data['message'])
+                ]);
+                
+                $this->tracingService->addSpanEvent($span, 'message_too_large');
+                $errorResponse = $this->errorResponse($response, 'El mensaje es demasiado largo (máximo 8KB)', 400);
+                $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                return $errorResponse;
+            }
+
+            // Validar tamaño del conversation_id si existe
+            if (isset($data['conversation_id']) && is_array($data['conversation_id'])) {
+                if (count($data['conversation_id']) > 100) {
+                    $this->logger->warning('Conversation ID array too large', [
+                        'request_id' => $requestId,
+                        'conversation_id_count' => count($data['conversation_id'])
+                    ]);
+                    
+                    $this->tracingService->addSpanEvent($span, 'conversation_id_too_large');
+                    $errorResponse = $this->errorResponse($response, 'El historial de conversación es demasiado largo', 400);
+                    $this->tracingService->finishSpan($span, ['http.status_code' => 400]);
+                    return $errorResponse;
+                }
+            }
+
+            // Process message with tracing
+            $this->tracingService->addSpanEvent($span, 'chat_processing_start', [
+                'message_length' => strlen($data['message'])
+            ]);
+            
+            $result = $this->chatService->processMessage($data['message'], $span);
+            
+            $this->tracingService->addSpanEvent($span, 'chat_processing_complete');
             
             $processingTime = round((microtime(true) - $startTime) * 1000, 2);
             
@@ -128,6 +226,12 @@ class ChatController
 
             // Add rate limit headers to successful response
             $successResponse = $this->successResponse($response, $result);
+            $this->tracingService->finishSpan($span, [
+                'http.status_code' => 200,
+                'processing_time_ms' => $processingTime,
+                'response_mode' => $result['mode'] ?? 'unknown'
+            ]);
+            
             return $successResponse
                 ->withHeader('X-RateLimit-Limit', (string) $rateLimitResult['limit'])
                 ->withHeader('X-RateLimit-Remaining', (string) $rateLimitResult['remaining'])
@@ -143,6 +247,11 @@ class ChatController
                 'error' => $e->getMessage()
             ]);
             
+            $this->tracingService->finishSpanWithError($span, $e, [
+                'http.status_code' => 400,
+                'processing_time_ms' => $processingTime
+            ]);
+            
             return $this->errorResponse($response, $e->getMessage(), 400)
                 ->withHeader('X-Request-ID', $requestId);
                 
@@ -156,6 +265,11 @@ class ChatController
                 'exception_type' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine()
+            ]);
+            
+            $this->tracingService->finishSpanWithError($span, $e, [
+                'http.status_code' => 500,
+                'processing_time_ms' => $processingTime
             ]);
             
             return $this->errorResponse($response, 'Error interno del servidor', 500)

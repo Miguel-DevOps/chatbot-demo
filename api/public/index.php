@@ -6,8 +6,10 @@ use ChatbotDemo\Config\AppConfig;
 use ChatbotDemo\Config\DependencyContainer;
 use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
+use ChatbotDemo\Controllers\MetricsController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
+use ChatbotDemo\Middleware\MetricsMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -55,6 +57,9 @@ try {
     // Add our custom error handler middleware
     $app->add($container->get(ErrorHandlerMiddleware::class));
     
+    // Add metrics middleware (before CORS so metrics capture all requests)
+    $app->add($container->get(MetricsMiddleware::class));
+    
     // Add CORS middleware
     $app->add($container->get(CorsMiddleware::class));
 
@@ -68,6 +73,10 @@ try {
     // API v1 routes
     $app->get('/api/v1/health', [HealthController::class, 'health']);
     $app->post('/api/v1/chat', [ChatController::class, 'chat']);
+    $app->get('/api/v1/metrics', [MetricsController::class, 'metrics']);
+    
+    // Prometheus metrics endpoint (alternative path)
+    $app->get('/metrics', [MetricsController::class, 'metrics']);
     
     // OPTIONS for CORS
     $app->options('/chat.php', [ChatController::class, 'options']);
@@ -76,6 +85,8 @@ try {
     $app->options('/health', [ChatController::class, 'options']);
     $app->options('/api/v1/chat', [ChatController::class, 'options']);
     $app->options('/api/v1/health', [ChatController::class, 'options']);
+    $app->options('/api/v1/metrics', [ChatController::class, 'options']);
+    $app->options('/metrics', [ChatController::class, 'options']);
 
     // Root route with API information
     $app->get('/', function (Request $request, Response $response) use ($config, $logger) {
@@ -89,6 +100,8 @@ try {
                 'POST /chat' => 'Chat with AI (legacy)',
                 'GET /api/v1/health' => 'Health check',
                 'GET /health' => 'Health check (legacy)',
+                'GET /api/v1/metrics' => 'Prometheus metrics',
+                'GET /metrics' => 'Prometheus metrics (alternative)',
                 'GET /' => 'API information'
             ],
             'timestamp' => date('c')
@@ -122,7 +135,9 @@ try {
                 'POST /api/v1/chat' => 'Chat endpoint',
                 'POST /chat' => 'Chat endpoint (legacy)',
                 'GET /api/v1/health' => 'Health check',
-                'GET /health' => 'Health check (legacy)'
+                'GET /health' => 'Health check (legacy)',
+                'GET /api/v1/metrics' => 'Prometheus metrics',
+                'GET /metrics' => 'Prometheus metrics (alternative)'
             ]
         ];
         
