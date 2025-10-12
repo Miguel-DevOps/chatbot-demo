@@ -24,7 +24,8 @@
     "preview": "vite preview",
     "security-check": "pnpm audit --audit-level=moderate",
     "security-fix": "pnpm audit fix",
-    "test": "vitest"
+    "test": "vitest",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -83,6 +84,8 @@
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^12.0.0",
+    "@commitlint/cli": "^20.1.0",
+    "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.37.0",
     "@tailwindcss/typography": "^0.5.19",
     "@testing-library/react": "^16.3.0",
@@ -97,6 +100,7 @@
     "eslint-plugin-react-hooks": "^7.0.0",
     "eslint-plugin-react-refresh": "^0.4.23",
     "globals": "^16.4.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.0.0",
     "openapi-typescript": "^7.9.1",
     "postcss": "^8.5.6",
