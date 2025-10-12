@@ -15,7 +15,7 @@
 
 - **Frontend**: React + TypeScript + TailwindCSS
 - **Backend**: PHP + Slim Framework + SQLite
-- **AI**: Google Gemini API
+- **AI**: Google Gemini API or Open-AI API
 - **Rate Limiting**: Robust IP-based system
 
 ## Available Functionalities
@@ -33,9 +33,9 @@
 
 ## Contact Information
 
-- **WhatsApp**: +00 000 000 0000 (Demo)
-- **Email**: demo@chatbot-demo.com
-- **Website**: www.chatbot-demo.com
+- **WhatsApp**: +57 313 469 2221 (Chatbot Developer Contact)
+- **Email**: miguel@developmi.com
+- **Website**: www.developmi.com
 
 ---
 

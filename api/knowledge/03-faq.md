@@ -17,7 +17,7 @@ It currently works in Spanish and English, with automatic detection based on bro
 - Frontend: React, TypeScript, TailwindCSS
 - Backend: PHP with Slim Framework
 - Database: SQLite for rate limiting
-- AI: Google Gemini API
+- AI: Google Gemini API or Open-AI API
 
 ### Is it secure?
 Yes, it implements multiple security layers:
