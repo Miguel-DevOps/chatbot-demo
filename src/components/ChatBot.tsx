@@ -80,6 +80,11 @@ const ChatBot: React.FC = () => {
     setInput('');
   };
 
+  // Función para hacer scroll al final de los mensajes
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Configuración para verificar estado de la API al abrir
   useEffect(() => {
     if (isOpen) {
@@ -96,13 +101,10 @@ const ChatBot: React.FC = () => {
       // Animar la aparición de los botones con delay
       setTimeout(() => setButtonsVisible(true), 300);
     } else {
-      setButtonsVisible(false);
+      // También usar setTimeout para evitar setState sincrónico en el effect
+      setTimeout(() => setButtonsVisible(false), 0);
     }
   }, [isOpen, showInitialOptions]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const addMessage = (content: string, isUser: boolean = false) => {
     const newMessage: Message = {
@@ -161,7 +163,7 @@ const ChatBot: React.FC = () => {
       case 'whatsapp': {
         const whatsappMessage = t('messages.whatsappMessage');
         addMessage(whatsappMessage);
-        window.open('https://wa.me/#', '_blank');
+        window.open('https://wa.me/573134692221', '_blank');
         break;
       }
       case 'faq': {
@@ -172,7 +174,7 @@ const ChatBot: React.FC = () => {
       case 'schedule': {
         const scheduleMessage = t('messages.scheduleMessage');
         addMessage(scheduleMessage);
-        window.open('URL_CALENDAR_SYSTEM', '_blank');
+        window.open('https://calendar.app.google/DdMWDtRisQ9RCPBu6', '_blank');
         break;
       }
     }
