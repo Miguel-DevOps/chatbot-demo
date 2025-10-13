@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace ChatbotDemo\Middleware;
 
 use ChatbotDemo\Config\AppConfig;
-use ChatbotDemo\Services\TracingService;
+use ChatbotDemo\Config\OpenTelemetryBootstrap;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\TracerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -20,50 +21,59 @@ class ErrorHandlerMiddleware implements MiddlewareInterface
 {
     private LoggerInterface $logger;
     private AppConfig $config;
-    private TracingService $tracingService;
+    private TracerInterface $tracer;
 
-    public function __construct(LoggerInterface $logger, AppConfig $config, TracingService $tracingService)
+    public function __construct(LoggerInterface $logger, AppConfig $config, TracerInterface $tracer)
     {
         $this->logger = $logger;
         $this->config = $config;
-        $this->tracingService = $tracingService;
+        $this->tracer = $tracer;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        // Start error handling span
-        $span = $this->tracingService->startHttpSpan(
+        // Start enhanced error handling span
+        $httpAttributes = OpenTelemetryBootstrap::createHttpAttributes(
+            $request->getServerParams(),
             $request->getMethod(),
-            (string) $request->getUri(),
-            [
-                'component' => 'error_handler',
-                'http.user_agent' => $request->getHeaderLine('User-Agent')
-            ]
+            (string) $request->getUri()
         );
+        
+        $span = $this->tracer->spanBuilder('error_handler')
+            ->setAttributes(array_merge($httpAttributes, [
+                'middleware.type' => 'error_handler'
+            ]))
+            ->startSpan();
 
         try {
             $response = $handler->handle($request);
             
             // Add success attributes to span
-            $this->tracingService->finishSpan($span, [
+            $span->setAttributes([
                 'http.status_code' => $response->getStatusCode(),
                 'success' => true
-            ]);
+            ])->setStatus(\OpenTelemetry\API\Trace\StatusCode::STATUS_OK)
+              ->end();
             
             return $response;
             
         } catch (Throwable $exception) {
-            // Mark error in span and finish with error
-            $this->tracingService->addSpanEvent($span, 'exception_caught', [
+            // Record exception in span
+            $span->addEvent('exception_caught', [
                 'exception.type' => get_class($exception),
-                'exception.message' => $exception->getMessage()
+                'exception.message' => $exception->getMessage(),
+                'exception.file' => $exception->getFile(),
+                'exception.line' => $exception->getLine()
             ]);
 
             $response = $this->handleException($request, $exception, $span);
             
-            $this->tracingService->finishSpanWithError($span, $exception, [
-                'http.status_code' => $response->getStatusCode()
-            ]);
+            $span->recordException($exception)
+                 ->setAttributes([
+                     'http.status_code' => $response->getStatusCode(),
+                     'error.handled' => true
+                 ])->setStatus(\OpenTelemetry\API\Trace\StatusCode::STATUS_ERROR, $exception->getMessage())
+                   ->end();
             
             return $response;
         }

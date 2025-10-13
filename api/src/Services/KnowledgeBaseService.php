@@ -69,14 +69,23 @@ class KnowledgeBaseService
         $this->cacheTime = 0;
     }
 
-    public function addUserContext(string $knowledge, string $userMessage): string
+    public function addUserContext(string $knowledge, string $userMessage, ?string $conversationId = null): string
     {
-        $contextualKnowledge = $knowledge . "\n\nPregunta del usuario: " . $userMessage;
+        $contextualKnowledge = $knowledge;
+        
+        // Add conversation context if provided
+        if ($conversationId !== null && !empty($conversationId)) {
+            $contextualKnowledge .= "\n\nContext de conversación:\n";
+            $contextualKnowledge .= sprintf("conversation ID: %s\n", $conversationId);
+        }
+        
+        $contextualKnowledge .= "\n\nUser Question: " . $userMessage;
         
         $this->logger->debug('Added user context to knowledge base', [
             'original_length' => strlen($knowledge),
             'contextual_length' => strlen($contextualKnowledge),
-            'user_message_length' => strlen($userMessage)
+            'user_message_length' => strlen($userMessage),
+            'has_conversation_id' => $conversationId !== null
         ]);
         
         return $contextualKnowledge;

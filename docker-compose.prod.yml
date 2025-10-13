@@ -29,6 +29,13 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
       - REDIS_DATABASE=0
+      # OpenTelemetry configuration
+      - OTEL_SERVICE_NAME=chatbot-demo-api
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_TRACES_ENABLED=true
+      - OTEL_METRICS_ENABLED=true
+      - OTEL_LOGS_ENABLED=true
     volumes:
       - api-logs:/var/www/html/logs
       - api-storage:/var/www/html/storage
@@ -102,6 +109,55 @@ services:
       - chatbot-network
     restart: unless-stopped
     profiles: ["monitoring"]
+
+  # Jaeger tracing backend
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14250:14250"  # gRPC receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - COLLECTOR_OTLP_GRPC_PORT=4317
+      - COLLECTOR_OTLP_HTTP_PORT=4318
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    profiles: ["observability"]
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otelcol-contrib/otel-collector.yml"]
+    volumes:
+      - ./observability/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics
+      - "8889:8889"   # Prometheus exporter metrics
+    depends_on:
+      - jaeger
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+    profiles: ["observability"]
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
 
 volumes:
   redis-data:

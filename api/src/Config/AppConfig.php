@@ -143,6 +143,11 @@ class AppConfig
         return $instance;
     }
 
+    public function getVersion(): string
+    {
+        return $this->get('app.version', '2.0.0');
+    }
+
     /**
      * Obtain entire configuration as array (for testing)
      */

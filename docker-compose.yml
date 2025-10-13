@@ -27,6 +27,13 @@ services:
       - REDIS_PORT=6379
       - REDIS_PASSWORD=
       - REDIS_DATABASE=0
+      # OpenTelemetry configuration (disabled in development by default)
+      - OTEL_SERVICE_NAME=chatbot-demo-api-dev
+      - OTEL_SERVICE_VERSION=1.0.0-dev
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_TRACES_ENABLED=false
+      - OTEL_METRICS_ENABLED=false
+      - OTEL_LOGS_ENABLED=false
     volumes:
       - ./api:/var/www/html  # Mount source code for development
       - api-logs:/var/www/html/logs

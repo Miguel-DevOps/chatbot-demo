@@ -7,6 +7,7 @@ namespace ChatbotDemo\Config;
 use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Controllers\MetricsController;
+use ChatbotDemo\Config\OpenTelemetryBootstrap;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
 use ChatbotDemo\Middleware\MetricsMiddleware;
@@ -19,7 +20,8 @@ use ChatbotDemo\Services\GenerativeAiClientInterface;
 use ChatbotDemo\Services\GeminiApiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Services\RateLimitService;
-use ChatbotDemo\Services\TracingService;
+use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\API\Globals;
 use DI\Container;
 use DI\ContainerBuilder;
 use Monolog\Handler\StreamHandler;
@@ -46,6 +48,9 @@ class DependencyContainer
 
     private static function buildContainer(): Container
     {
+        // Initialize OpenTelemetry SDK early
+        OpenTelemetryBootstrap::initialize();
+        
         $builder = new ContainerBuilder();
         
         // Enable compilation in production for better performance
@@ -89,10 +94,9 @@ class DependencyContainer
                 return $logger;
             },
 
-            // Tracing Service
-            TracingService::class => function (LoggerInterface $logger, AppConfig $config) {
-                $serviceName = $config->get('app.name', 'chatbot-api');
-                return new TracingService($logger, $serviceName);
+            // OpenTelemetry Tracer
+            TracerInterface::class => function () {
+                return Globals::tracerProvider()->getTracer('chatbot-api');
             },
 
             // AI Client abstraction
@@ -132,9 +136,9 @@ class DependencyContainer
                 GenerativeAiClientInterface $aiClient,
                 KnowledgeBaseService $knowledgeService, 
                 LoggerInterface $logger,
-                TracingService $tracingService
+                TracerInterface $tracer
             ) {
-                return new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+                return new ChatService($aiClient, $knowledgeService, $logger, $tracer);
             },
 
             // Controllers with automatic dependency injection
@@ -143,9 +147,9 @@ class DependencyContainer
                 RateLimitService $rateLimitService,
                 AppConfig $config, 
                 LoggerInterface $logger,
-                TracingService $tracingService
+                TracerInterface $tracer
             ) {
-                return new ChatController($chatService, $rateLimitService, $config, $logger, $tracingService);
+                return new ChatController($chatService, $rateLimitService, $config, $logger, $tracer);
             },
 
             HealthController::class => function (
@@ -203,6 +207,10 @@ class DependencyContainer
                         if (extension_loaded('apcu') && apcu_enabled()) {
                             return new CollectorRegistry(new APC());
                         }
+                        
+                        // If APCu is not enabled, fallback to in-memory
+                        $logger->warning('APCu not enabled, falling back to in-memory storage');
+                        return new CollectorRegistry(new InMemory());
                     } catch (\Exception $apcException) {
                         $logger->warning('APCu not available, falling back to in-memory storage', [
                             'apc_error' => $apcException->getMessage()
@@ -223,9 +231,9 @@ class DependencyContainer
                 return new CorsMiddleware($config, $logger);
             },
 
-            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracingService $tracingService) {
-                return new ErrorHandlerMiddleware($logger, $config, $tracingService);
-            }
+            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracerInterface $tracer) {
+                return new ErrorHandlerMiddleware($logger, $config, $tracer);
+            },
         ]);
 
         return $builder->build();

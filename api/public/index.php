@@ -162,7 +162,8 @@ try {
     ];
     
     // Only show details in development
-    if (isset($config) && $config->isDevelopment()) {
+    $environment = $_ENV['APP_ENV'] ?? 'development';
+    if ($environment === 'development' || isset($config) && $config->isDevelopment()) {
         $errorData['debug'] = [
             'exception' => get_class($e),
             'message' => $e->getMessage(),
