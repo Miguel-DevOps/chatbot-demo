@@ -79,7 +79,7 @@ class AppConfig
             ],
             'logging' => [
                 'level' => $this->getEnv('LOG_LEVEL', 'INFO'),
-                'path' => dirname(__DIR__, 1) . '/logs/app.log'
+                'path' => dirname(__DIR__, 2) . '/logs/app.log'  // /var/www/html/logs/app.log
             ]
         ];
     }

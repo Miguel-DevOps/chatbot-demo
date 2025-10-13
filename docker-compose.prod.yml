@@ -63,7 +63,7 @@ services:
   redis:
     image: redis:7-alpine
     user: "999:999"  # Redis user
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --protected-mode yes
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --protected-mode no
     volumes:
       - redis-data:/data
     networks:
