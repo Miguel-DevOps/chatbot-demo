@@ -1,0 +1,91 @@
+# Alert Rules for Chatbot Demo API
+# These rules define when to fire alerts based on metrics
+
+groups:
+  - name: chatbot-api-alerts
+    rules:
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(chatbot_api_http_requests_total{status_code=~"5.."}[5m])) 
+            / 
+            sum(rate(chatbot_api_http_requests_total[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          service: chatbot-api
+          alert_type: error_rate
+        annotations:
+          summary: "High 5xx error rate detected"
+          description: "The 5xx error rate is {{ $value | humanizePercentage }} for the last 5 minutes, which exceeds the 5% threshold."
+          runbook_url: "https://github.com/Miguel-DevOps/chatbot-demo/wiki/Runbook-HighErrorRate"
+          dashboard_url: "http://localhost:3000/d/chatbot-api/chatbot-api-dashboard"
+
+      # High request latency alert
+      - alert: HighRequestLatency
+        expr: |
+          histogram_quantile(0.95, 
+            sum(rate(chatbot_api_http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 1.0
+        for: 2m
+        labels:
+          severity: warning
+          service: chatbot-api
+          alert_type: latency
+        annotations:
+          summary: "High request latency detected"
+          description: "95th percentile latency is {{ $value }}s for the last 5 minutes, which exceeds 1.0s threshold."
+          runbook_url: "https://github.com/Miguel-DevOps/chatbot-demo/wiki/Runbook-HighLatency"
+
+      # Low request rate (possible service down)
+      - alert: LowRequestRate
+        expr: |
+          sum(rate(chatbot_api_http_requests_total[5m])) < 0.01
+        for: 3m
+        labels:
+          severity: warning
+          service: chatbot-api
+          alert_type: availability
+        annotations:
+          summary: "Very low request rate detected"
+          description: "Request rate is {{ $value }} requests/second, which may indicate service issues."
+
+      # API Service Down
+      - alert: APIServiceDown
+        expr: up{job="chatbot-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: chatbot-api
+          alert_type: availability
+        annotations:
+          summary: "Chatbot API service is down"
+          description: "The chatbot API service has been down for more than 1 minute."
+
+  - name: infrastructure-alerts
+    rules:
+      # Redis down
+      - alert: RedisServiceDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+          alert_type: availability
+        annotations:
+          summary: "Redis service is down"
+          description: "Redis service has been down for more than 1 minute."
+
+      # OpenTelemetry Collector down
+      - alert: OTelCollectorDown
+        expr: up{job="otel-collector"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: otel-collector
+          alert_type: availability
+        annotations:
+          summary: "OpenTelemetry Collector is down"
+          description: "OpenTelemetry Collector has been down for more than 2 minutes."

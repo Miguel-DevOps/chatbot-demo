@@ -1,0 +1,15 @@
+# Grafana Dashboard Configuration
+# Auto-provisions dashboards from the dashboards directory
+
+apiVersion: 1
+
+providers:
+  - name: 'chatbot-dashboards'
+    orgId: 1
+    folder: 'Chatbot Demo'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

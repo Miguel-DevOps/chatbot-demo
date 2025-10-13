@@ -1,0 +1,65 @@
+# Prometheus Configuration for Chatbot Demo API
+# This configuration scrapes metrics from the API service and other monitoring targets
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'chatbot-demo'
+    environment: 'production'
+
+# Rule files specify a list of globs. Rules and alerts are read from
+# all matching files.
+rule_files:
+  - "alert_rules.yml"
+
+# Alerting configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+          # - alertmanager:9093
+
+# Scraping configuration
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+
+  # Scrape the main API service
+  - job_name: 'chatbot-api'
+    static_configs:
+      - targets: ['nginx:80']
+    scrape_interval: 10s
+    metrics_path: '/api/v1/metrics'
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # Scrape OpenTelemetry Collector metrics (optional)
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8888']
+    scrape_interval: 15s
+    metrics_path: '/metrics'
+    honor_labels: true
+
+  # Scrape Redis metrics (if redis-exporter is enabled)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+
+  # Scrape Node Exporter metrics (for system metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    metrics_path: '/metrics'
