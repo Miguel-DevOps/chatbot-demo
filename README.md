@@ -90,9 +90,9 @@ This project serves as a **practical blueprint** for evolving a chatbot applicat
 
 ## ⚡ Quick Start
 
-### 🐳 Method 1: Docker (Recommended)
+### 🐳 Docker Development (Recommended)
 
-The fastest way to run the complete application:
+**Production-like development environment with unified architecture:**
 
 ```bash
 # Clone and start
@@ -101,25 +101,29 @@ cd chatbot-demo
 cp .env.example .env
 # Edit .env with your GEMINI_API_KEY
 
-# Start everything with Docker
+# Start unified development environment
 docker-compose up --build
 ```
 
 **Access:**
-- Frontend: http://localhost:3000
-- API: http://localhost:8080
-- API Docs: http://localhost:8080/docs
+- **Frontend**: http://localhost:3000  
+- **API**: http://localhost (nginx unified with production)
+- **API Docs**: http://localhost/docs
+- **Health Check**: http://localhost/health
 
-### 🛠️ Method 2: Manual Setup (Educational)
+> ✅ **Best Practice**: This setup uses the same Nginx + PHP-FPM architecture as production, eliminating environment drift.
 
-For developers who want to understand the stack:
+### 🛠️ Manual Setup (Legacy/Debugging Only)
+
+⚠️ **Note**: This method creates environment drift and should only be used for quick debugging.
 
 **Prerequisites:**
 ```bash
 # Required versions
-PHP >= 8.1.0 (with json, mbstring, pdo, sqlite3, curl, openssl extensions)
+PHP >= 8.2.0 (with json, mbstring, pdo, redis, curl, openssl extensions)
 Node.js >= 18.0.0
 pnpm >= 8.0.0
+Redis >= 7.0
 ```
 
 **Installation:**
@@ -132,12 +136,12 @@ pnpm install
 cp .env.example .env
 # Edit .env with your configuration
 
-# 3. Start development servers
-pnpm dev                                    # Frontend (http://localhost:5173)
-php -S localhost:8080 -t api/public        # Backend (http://localhost:8080)
+# 3. Start development servers (debugging only)
+pnpm dev                                    # Frontend (http://localhost:5173)
+# Note: php -S is deprecated - use Docker for proper development
 ```
 
-> ⚠️ **CRITICAL:** `php -S` is **ONLY for development**. Never use it in production. See [Configuration & Security](#-configuration--security) for production deployment.
+> 🚨 **DEPRECATED**: `php -S` creates environment drift and is no longer recommended. Use `docker-compose up` for development that matches production.
 
 ## �️ Deployment Levels & Architecture
 

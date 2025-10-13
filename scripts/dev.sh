@@ -131,10 +131,14 @@ setup_development() {
     
     log_success "Development environment setup completed!"
     echo
-    log_info "Quick start:"
+    log_info "Recommended development workflow:"
     echo "1. Configure .env file with your API keys"
-    echo "2. Start development server: ./dev.sh start"
-    echo "3. Test API: curl http://localhost:8080/health"
+    echo "2. Start unified environment: docker-compose up --build"
+    echo "3. Access API: curl http://localhost/health"
+    echo
+    log_info "Legacy development (debugging only):"
+    echo "- Start manual server: ./dev.sh start"
+    echo "- Test manual API: curl http://localhost:8080/health"
     
     return 0
 }
@@ -165,8 +169,9 @@ start_development_servers() {
     
     check_directory "public" "API public directory" || return 1
     
-    # Start PHP development server
-    log_info "Starting PHP development server on ${SERVER_HOST}:${SERVER_PORT}..."
+    # Start PHP development server (LEGACY - use Docker for production-like environment)
+    log_info "Starting PHP development server on ${SERVER_HOST}:${SERVER_PORT}... (LEGACY MODE)"
+    log_warning "Consider using 'docker-compose up' for production-like development"
     cd public
     php -S "${SERVER_HOST}:${SERVER_PORT}" > "$LOG_FILE" 2>&1 &
     local server_pid=$!

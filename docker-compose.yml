@@ -1,10 +1,25 @@
 services:
+  # Nginx as reverse proxy (unified with production)
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./api/public:/var/www/html/public:ro
+    depends_on:
+      - api
+    networks:
+      - chatbot-network
+
+  # PHP-FPM API service
   api:
     build:
       context: ./api
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
+      target: production  # Use production target for consistency
     environment:
       - APP_ENV=development
       - LOG_LEVEL=debug
@@ -13,7 +28,9 @@ services:
       - REDIS_PASSWORD=
       - REDIS_DATABASE=0
     volumes:
-      - ./api:/var/www/html
+      - ./api:/var/www/html  # Mount source code for development
+      - api-logs:/var/www/html/logs
+      - api-storage:/var/www/html/storage
     depends_on:
       - redis
     networks:
@@ -23,7 +40,7 @@ services:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --protected-mode no
     volumes:
       - redis-data:/data
     networks:
@@ -31,6 +48,8 @@ services:
 
 volumes:
   redis-data:
+  api-logs:  # Add volumes for unified development
+  api-storage:
 
 networks:
   chatbot-network:

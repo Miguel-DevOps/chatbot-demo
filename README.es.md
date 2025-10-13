@@ -90,10 +90,10 @@ cp .env.example .env
 
 # 3. Arranca servidores de desarrollo
 pnpm dev                                    # Frontend (http://localhost:5173)
-php -S localhost:8080 -t api/public        # Backend (http://localhost:8080)
+# Note: php -S está depreciado - usa Docker para desarrollo apropiado
 ```
 
-> ⚠️ **CRÍTICO:** `php -S` es **SÓLO para desarrollo**. No lo uses en producción. Consulta [Configuración y seguridad](#-configuración-y-seguridad) para opciones de producción.
+> 🚨 **DEPRECIADO**: `php -S` crea divergencia de entornos y ya no se recomienda. Usa `docker-compose up` para desarrollo que coincida con producción.
 
 ## �️ Niveles de despliegue y arquitectura
 

@@ -94,7 +94,8 @@ start_php_server() {
     # Verify public directory
     check_directory "public" "API public directory" || return 1
     
-    # Start server
+    # Start server (legacy mode for testing)
+    log_warning "Using php -S for testing - consider Docker-based testing for production environments"
     cd public
     php -S "${SERVER_HOST}:${SERVER_PORT}" > "$LOG_FILE" 2>&1 &
     local server_pid=$!
