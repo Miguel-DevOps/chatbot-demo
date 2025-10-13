@@ -342,8 +342,8 @@ abstract class IntegrationTestCase extends TestCase
 
     protected function createRateLimitService(AppConfig $config, LoggerInterface $logger): RateLimitService
     {
-        // Use SqliteRateLimitStorage for testing
-        $storage = new \ChatbotDemo\Repositories\SqliteRateLimitStorage($config, $logger);
+        // Use RedisRateLimitStorage for testing to maintain consistency with production
+        $storage = new \ChatbotDemo\Repositories\RedisRateLimitStorage($config, $logger);
         return new RateLimitService($config, $logger, $storage);
     }
 

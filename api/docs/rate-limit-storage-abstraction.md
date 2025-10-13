@@ -11,7 +11,7 @@ RateLimitService
     ↓ (depends on)
 RateLimitStorageInterface
     ↑ (implemented by)
-SqliteRateLimitStorage | RedisRateLimitStorage | ...
+RedisRateLimitStorage (cloud-native approach)
 ```
 
 ## Components
@@ -33,8 +33,7 @@ interface RateLimitStorageInterface
 
 ### 2\. Available Implementations
 
-  - **`SqliteRateLimitStorage`**: Implementation using SQLite (default)
-  - **`RedisRateLimitStorage`**: Implementation using Redis (example)
+  - **`RedisRateLimitStorage`**: Implementation using Redis (cloud-native production ready)
 
 ### 3\. `RateLimitService`
 
@@ -84,16 +83,13 @@ Add Redis configuration in `AppConfig.php` or environment variables:
 
 ### Step 3: Change the Dependency Injection
 
-In `DependencyContainer.php`, change a single line:
+In `DependencyContainer.php`, the configuration is set for Redis only:
 
 ```php
-// BEFORE (SQLite)
+// Cloud-native approach - Redis only, no fallback
 RateLimitStorageInterface::class => function (AppConfig $config, LoggerInterface $logger) {
-    return new SqliteRateLimitStorage($config, $logger);
-},
-
-// AFTER (Redis)
-RateLimitStorageInterface::class => function (AppConfig $config, LoggerInterface $logger) {
+    // Only Redis implementation - no fallback to SQLite for cloud-native deployment
+    // Application will fail fast if Redis is not available, forcing proper infrastructure
     return new RedisRateLimitStorage($config, $logger);
 },
 ```
@@ -176,22 +172,16 @@ Add specific configuration in `AppConfig.php`.
 
 ## Use Cases by Implementation
 
-### SQLite (`SqliteRateLimitStorage`)
-
-  - **✅ Ideal for**: Development, testing, small-scale applications
-  - **✅ Advantages**: No external dependencies, simple configuration
-  - **❌ Limitations**: Not distributable, lower performance
-
 ### Redis (`RedisRateLimitStorage`)
 
-  - **✅ Ideal for**: Production, multiple instances, high concurrency
-  - **✅ Advantages**: Excellent performance, distributable, automatic TTL
-  - **❌ Limitations**: External dependency, higher complexity
+  - **✅ Ideal for**: Production, development, multiple instances, high concurrency, cloud-native deployments
+  - **✅ Advantages**: Excellent performance, distributable, automatic TTL, stateless architecture
+  - **❌ Limitations**: External dependency (mitigated by proper infrastructure)
 
-### MySQL/PostgreSQL (future implementation)
+### Future Implementations
 
-  - **✅ Ideal for**: When you already have a relational DB, detailed auditing
-  - **✅ Advantages**: Guaranteed persistence, complex queries
+  - **MySQL/PostgreSQL**: For when you need guaranteed persistence and complex queries
+  - **DynamoDB**: For AWS-native deployments
   - **❌ Limitations**: Higher latency, more resources
 
 ## Monitoring and Debugging
@@ -229,19 +219,17 @@ Each implementation logs important events:
 ### Specific Implementation Tests
 
 ```bash
-# SQLite tests
-./vendor/bin/phpunit --filter SqliteRateLimitStorage
-
 # Redis tests (requires a running Redis instance)
 ./vendor/bin/phpunit --filter RedisRateLimitStorage
 ```
 
 ## Conclusion
 
-This abstraction demonstrates **evolutionary architecture** in action:
+This abstraction demonstrates **cloud-native architecture** in action:
 
 1.  **Separation of concerns**: Business logic vs. persistence
 2.  **Open/Closed Principle**: Open for extension, closed for modification
 3.  **Dependency Inversion**: Depends on abstractions, not implementations
+4.  **Fail-fast principle**: Application fails immediately if Redis is unavailable, ensuring proper infrastructure
 
 The result is a system that can evolve from SQLite in development to Redis in production, **without changing a single line of the Rate Limiting logic**.

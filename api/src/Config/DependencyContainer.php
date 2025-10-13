@@ -11,7 +11,7 @@ use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
 use ChatbotDemo\Middleware\MetricsMiddleware;
 use ChatbotDemo\Repositories\RateLimitStorageInterface;
-use ChatbotDemo\Repositories\SqliteRateLimitStorage;
+use ChatbotDemo\Repositories\RedisRateLimitStorage;
 use ChatbotDemo\Repositories\KnowledgeProviderInterface;
 use ChatbotDemo\Repositories\FilesystemKnowledgeProvider;
 use ChatbotDemo\Services\ChatService;
@@ -115,7 +115,9 @@ class DependencyContainer
 
             // Rate Limiting Storage abstraction
             RateLimitStorageInterface::class => function (AppConfig $config, LoggerInterface $logger) {
-                return new SqliteRateLimitStorage($config, $logger);
+                // Only Redis implementation - no fallback to SQLite for cloud-native deployment
+                // Application will fail fast if Redis is not available, forcing proper infrastructure
+                return new RedisRateLimitStorage($config, $logger);
             },
 
             RateLimitService::class => function (
