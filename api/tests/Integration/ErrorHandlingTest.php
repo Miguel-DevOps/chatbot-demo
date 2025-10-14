@@ -83,7 +83,7 @@ class ErrorHandlingTest extends IntegrationTestCase
         
         $response = $this->postJson('/chat', [
             'message' => $largeMessage,
-            'conversation_id' => []
+            'conversation_id' => null
         ]);
         
         // Should be rejected or handled appropriately

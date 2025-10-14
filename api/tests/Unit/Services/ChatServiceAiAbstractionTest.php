@@ -7,9 +7,10 @@ namespace ChatbotDemo\Tests\Unit\Services;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\DemoAiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
-use ChatbotDemo\Services\TracingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Trace\TracerInterface;
 
 /**
  * Test for the AI Client abstraction in ChatService
@@ -20,15 +21,15 @@ class ChatServiceAiAbstractionTest extends TestCase
     private ChatService $chatService;
     private DemoAiClient $aiClient;
     private KnowledgeBaseService $knowledgeService;
-    private TracingService $tracingService;
+    private TracerInterface $tracer;
 
     protected function setUp(): void
     {
         // Create demo AI client
         $this->aiClient = new DemoAiClient();
         
-        // Create tracing service
-        $this->tracingService = new TracingService(new NullLogger(), 'test');
+        // Create tracer
+        $this->tracer = Globals::tracerProvider()->getTracer('test', '1.0.0');
         
         // Mock knowledge base service
         $this->knowledgeService = $this->createMock(KnowledgeBaseService::class);
@@ -46,7 +47,7 @@ class ChatServiceAiAbstractionTest extends TestCase
             $this->aiClient,
             $this->knowledgeService,
             new NullLogger(),
-            $this->tracingService
+            $this->tracer
         );
     }
 

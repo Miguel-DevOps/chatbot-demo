@@ -6,9 +6,10 @@ use Mockery;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Services\GenerativeAiClientInterface;
-use ChatbotDemo\Services\TracingService;
 use ChatbotDemo\Exceptions\ValidationException;
 use OpenTelemetry\API\Trace\SpanInterface;
+use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\API\Globals;
 use Psr\Log\LoggerInterface;
 
 class ChatServiceTest extends TestCase
@@ -29,7 +30,7 @@ class ChatServiceTest extends TestCase
         $aiClient = Mockery::mock(GenerativeAiClientInterface::class);
         $knowledgeService = Mockery::mock(KnowledgeBaseService::class);
         $logger = Mockery::mock(LoggerInterface::class);
-        $tracingService = Mockery::mock(TracingService::class);
+        $tracer = Mockery::mock(TracerInterface::class);
 
         // Configure basic expectations
         $logger->shouldReceive('info')->byDefault();
@@ -37,12 +38,8 @@ class ChatServiceTest extends TestCase
         $logger->shouldReceive('warning')->byDefault();
         $logger->shouldReceive('error')->byDefault();
 
-        $tracingService->shouldReceive('startSpan')->byDefault()->andReturn(Mockery::mock(SpanInterface::class));
-        $tracingService->shouldReceive('finishSpan')->byDefault();
-        $tracingService->shouldReceive('finishSpanWithError')->byDefault();
-        $tracingService->shouldReceive('addAttribute')->byDefault()->andReturnSelf();
-        $tracingService->shouldReceive('addSpanEvent')->byDefault();
-        $tracingService->shouldReceive('recordException')->byDefault();
+        // Use a real tracer for the tests to avoid complex mocking
+        $tracer = Globals::tracerProvider()->getTracer('test', '1.0.0');
 
         $knowledgeService->shouldReceive('getKnowledgeBase')->byDefault()->andReturn('Test knowledge base content');
         $knowledgeService->shouldReceive('addUserContext')->byDefault()->andReturn('Test knowledge with context');
@@ -51,14 +48,14 @@ class ChatServiceTest extends TestCase
         $aiClient->shouldReceive('getProviderName')->byDefault()->andReturn('test');
         $aiClient->shouldReceive('isAvailable')->byDefault()->andReturn(true);
 
-        return [$aiClient, $knowledgeService, $logger, $tracingService];
+        return [$aiClient, $knowledgeService, $logger, $tracer];
     }
 
     public function testProcessMessageInDemoMode(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
         $result = $service->processMessage('What is React?');
 
         $this->assertIsArray($result);
@@ -68,9 +65,9 @@ class ChatServiceTest extends TestCase
 
     public function testProcessMessageWithEmptyInput(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
 
         $this->expectException(ValidationException::class);
         $service->processMessage('');
@@ -78,9 +75,9 @@ class ChatServiceTest extends TestCase
 
     public function testProcessMessageWithWhitespaceOnlyInput(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
 
         $this->expectException(ValidationException::class);
         $service->processMessage('   ');
@@ -88,9 +85,9 @@ class ChatServiceTest extends TestCase
 
     public function testProcessMessageWithTooLongInput(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
         $longMessage = str_repeat('a', 10001);
 
         $this->expectException(ValidationException::class);
@@ -99,9 +96,9 @@ class ChatServiceTest extends TestCase
 
     public function testProcessMessageWithForbiddenContent(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
 
         $this->expectException(ValidationException::class);
         $service->processMessage('Content with forbidden words: jailbreak hack exploit');
@@ -109,7 +106,7 @@ class ChatServiceTest extends TestCase
 
     public function testProcessMessageValidationSuccess(): void
     {
-        [$aiClient, $knowledgeService, $logger, $tracingService] = $this->createBasicMocks();
+        [$aiClient, $knowledgeService, $logger, $tracer] = $this->createBasicMocks();
 
         $aiClient->shouldReceive('generateContent')
             ->once()
@@ -119,7 +116,7 @@ class ChatServiceTest extends TestCase
             ->once()
             ->andReturn('Knowledge base content');
 
-        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        $service = new ChatService($aiClient, $knowledgeService, $logger, $tracer);
         $result = $service->processMessage('What is JavaScript?');
 
         $this->assertIsArray($result);

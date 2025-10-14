@@ -8,9 +8,9 @@ use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\DemoAiClient;
 use ChatbotDemo\Services\OpenAiClient;
 use ChatbotDemo\Services\KnowledgeBaseService;
-use ChatbotDemo\Services\TracingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use OpenTelemetry\API\Globals;
 
 /**
  * Test demonstrating the flexibility of AI provider abstraction
@@ -40,13 +40,14 @@ class AiProviderSwitchingTest extends TestCase
         
         // Test with Demo AI
         $demoClient = new DemoAiClient();
-        $chatServiceWithDemo = new ChatService($demoClient, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
+        $tracer = Globals::tracerProvider()->getTracer('test', '1.0.0');
+        $chatServiceWithDemo = new ChatService($demoClient, $this->knowledgeService, new NullLogger(), $tracer);
         
         $demoResult = $chatServiceWithDemo->processMessage($userMessage);
         
         // Test with OpenAI-like client
         $openAiClient = new OpenAiClient('demo', new NullLogger());
-        $chatServiceWithOpenAi = new ChatService($openAiClient, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
+        $chatServiceWithOpenAi = new ChatService($openAiClient, $this->knowledgeService, new NullLogger(), $tracer);
         
         $openAiResult = $chatServiceWithOpenAi->processMessage($userMessage);
         
@@ -93,7 +94,8 @@ class AiProviderSwitchingTest extends TestCase
         ];
         
         foreach ($providers as $providerName => $client) {
-            $chatService = new ChatService($client, $this->knowledgeService, new NullLogger(), new TracingService(new NullLogger(), "test"));
+            $tracer = Globals::tracerProvider()->getTracer('test', '1.0.0');
+            $chatService = new ChatService($client, $this->knowledgeService, new NullLogger(), $tracer);
             $result = $chatService->processMessage("Test with {$providerName}");
             
             $this->assertTrue($result['success'], "Failed with provider: {$providerName}");

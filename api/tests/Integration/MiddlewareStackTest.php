@@ -63,7 +63,7 @@ class MiddlewareStackTest extends IntegrationTestCase
             if ($method === 'POST') {
                 $response = $this->postJson($path, [
                     'message' => 'test',
-                    'conversation_id' => []
+                    'conversation_id' => null
                 ]);
             } else {
                 $response = $this->get($path);

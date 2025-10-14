@@ -14,9 +14,10 @@ use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\GenerativeAiClientInterface;
 use ChatbotDemo\Services\KnowledgeBaseService;
 use ChatbotDemo\Services\RateLimitService;
-use ChatbotDemo\Services\TracingService;
 use DI\Container;
 use DI\ContainerBuilder;
+use OpenTelemetry\API\Trace\TracerInterface;
+use OpenTelemetry\API\Globals;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
@@ -117,9 +118,9 @@ abstract class IntegrationTestCase extends TestCase
                 return $logger;
             },
 
-            // TracingService para testing (mock simplificado)
-            TracingService::class => function (LoggerInterface $logger) {
-                return new TracingService($logger, 'chatbot-test');
+            // TracerInterface para testing usando OpenTelemetry global
+            TracerInterface::class => function () {
+                return Globals::tracerProvider()->getTracer('chatbot-test', '1.0.0');
             },
 
             // AI Client mock para testing
@@ -155,9 +156,9 @@ abstract class IntegrationTestCase extends TestCase
                 GenerativeAiClientInterface $aiClient,
                 KnowledgeBaseService $knowledgeService,
                 LoggerInterface $logger,
-                TracingService $tracingService
+                TracerInterface $tracer
             ) {
-                return $this->createChatService($aiClient, $knowledgeService, $logger, $tracingService);
+                return $this->createChatService($aiClient, $knowledgeService, $logger, $tracer);
             },
 
             // Controllers con autowiring
@@ -166,9 +167,9 @@ abstract class IntegrationTestCase extends TestCase
                 RateLimitService $rateLimitService,
                 AppConfig $config,
                 LoggerInterface $logger,
-                TracingService $tracingService
+                TracerInterface $tracer
             ) {
-                return new ChatController($chatService, $rateLimitService, $config, $logger, $tracingService);
+                return new ChatController($chatService, $rateLimitService, $config, $logger, $tracer);
             },
 
             HealthController::class => function (AppConfig $config, LoggerInterface $logger, RateLimitService $rateLimitService) {
@@ -180,8 +181,8 @@ abstract class IntegrationTestCase extends TestCase
                 return new CorsMiddleware($config, $logger);
             },
 
-            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracingService $tracingService) {
-                return new ErrorHandlerMiddleware($logger, $config, $tracingService);
+            ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracerInterface $tracer) {
+                return new ErrorHandlerMiddleware($logger, $config, $tracer);
             }
         ]);
 
@@ -347,9 +348,9 @@ abstract class IntegrationTestCase extends TestCase
         return new RateLimitService($config, $logger, $storage);
     }
 
-    protected function createChatService(GenerativeAiClientInterface $aiClient, KnowledgeBaseService $knowledgeService, LoggerInterface $logger, TracingService $tracingService): ChatService
+    protected function createChatService(GenerativeAiClientInterface $aiClient, KnowledgeBaseService $knowledgeService, LoggerInterface $logger, TracerInterface $tracer): ChatService
     {
-        return new ChatService($aiClient, $knowledgeService, $logger, $tracingService);
+        return new ChatService($aiClient, $knowledgeService, $logger, $tracer);
     }
 
     /**
