@@ -27,6 +27,11 @@ jobs:
           node-version: '20'
           cache: 'pnpm'
 
+      - name: Verify pnpm installation
+        run: |
+          echo "pnpm version: $(pnpm --version)"
+          echo "pnpm location: $(which pnpm)"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -45,15 +50,20 @@ jobs:
         run: |
           cd api
           echo "🔍 Running Composer security audit..."
-          composer audit --format=json > composer-audit.json || COMPOSER_EXIT=$?
           
-          # Check if there are any security advisories
-          if [ "$COMPOSER_EXIT" != "0" ]; then
-            echo "❌ CRITICAL: Composer audit found security vulnerabilities!"
-            cat composer-audit.json
-            exit 1
+          # Run composer audit and check the JSON output
+          if composer audit --format=json > composer-audit.json; then
+            # Check if there are actual advisories in the JSON
+            if grep -q '"advisories":\s*\[.*[^][]\]' composer-audit.json; then
+              echo "❌ CRITICAL: Composer audit found security vulnerabilities!"
+              cat composer-audit.json
+              exit 1
+            else
+              echo "✅ Composer audit passed - no security vulnerabilities found"
+            fi
           else
-            echo "✅ Composer audit passed - no security vulnerabilities found"
+            echo "❌ ERROR: Composer audit command failed"
+            exit 1
           fi
 
       - name: Run pnpm security audit

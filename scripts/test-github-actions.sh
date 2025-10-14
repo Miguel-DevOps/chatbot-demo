@@ -117,7 +117,12 @@ for i in {1..30}; do
 done
 echo "✅ Todos los containers listos"
 
-echo "📦 Instalando dependencias en container..."
+echo "� Verificando environment del container..."
+docker-compose -f docker-compose.test.yml exec -T api php --version
+docker-compose -f docker-compose.test.yml exec -T api composer --version
+echo "✅ Container environment verificado"
+
+echo "�📦 Instalando dependencias en container..."
 if docker-compose -f docker-compose.test.yml exec -T api composer install --dev --prefer-dist --no-progress --no-interaction; then
     echo "✅ Dependencias instaladas"
 else
@@ -135,8 +140,14 @@ else
     exit 1
 fi
 
+echo "🔧 Configurando entorno de test en container..."
+docker-compose -f docker-compose.test.yml exec -T api mkdir -p tests/results
+docker-compose -f docker-compose.test.yml exec -T api mkdir -p storage/logs 2>/dev/null || echo "  ⚠️  storage/logs ya existe o se usará el volume"
+docker-compose -f docker-compose.test.yml exec -T api chmod -R 777 storage/logs 2>/dev/null || echo "  ⚠️  chmod falló, usando permisos por defecto"
+echo "✅ Entorno de test configurado"
+
 echo "🧪 Ejecutando Unit Tests..."
-if docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Unit/ --log-junit=tests/results/junit.xml; then
+if docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Unit/ --coverage-clover=coverage.xml --log-junit=tests/results/junit.xml; then
     echo "✅ Unit tests pasados"
 else
     echo "❌ ERROR: Unit tests fallaron"
@@ -155,6 +166,11 @@ else
     docker-compose -f docker-compose.test.yml down
     exit 1
 fi
+
+echo "📋 Copiando resultados de tests desde el container..."
+docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/tests/results/ ./api/tests/results/ 2>/dev/null || echo "⚠️  No se pudieron copiar algunos archivos de resultados"
+docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/coverage.xml ./api/coverage.xml 2>/dev/null || echo "⚠️  Coverage file no encontrado"
+echo "✅ Resultados copiados"
 
 echo "🧹 Limpiando containers..."
 docker-compose -f docker-compose.test.yml down
@@ -179,15 +195,22 @@ fi
 
 echo "🔍 Ejecutando Composer security audit..."
 cd api
-composer audit --format=json > composer-audit.json
-AUDIT_RESULT=$(cat composer-audit.json)
-# Check if advisories array is empty (no vulnerabilities)
-if echo "$AUDIT_RESULT" | grep -q '"advisories":\s*\[\]' && echo "$AUDIT_RESULT" | grep -q '"abandoned":\s*\[\]'; then
-    echo "✅ Composer audit pasado - sin vulnerabilidades"
-    SECURITY_SUCCESS=1
+echo "🔍 Running Composer security audit..."
+
+# Run composer audit and check the JSON output (matching GitHub Actions logic)
+if composer audit --format=json > composer-audit.json; then
+    # Check if there are actual advisories in the JSON
+    if grep -q '"advisories":\s*\[.*[^][]\]' composer-audit.json; then
+        echo "❌ CRITICAL: Composer audit found security vulnerabilities!"
+        cat composer-audit.json
+        cd ..
+        exit 1
+    else
+        echo "✅ Composer audit passed - no security vulnerabilities found"
+        SECURITY_SUCCESS=1
+    fi
 else
-    echo "❌ ERROR: Composer audit encontró vulnerabilidades"
-    cat composer-audit.json
+    echo "❌ ERROR: Composer audit command failed"
     cd ..
     exit 1
 fi

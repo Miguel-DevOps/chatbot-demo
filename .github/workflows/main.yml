@@ -38,7 +38,7 @@ jobs:
       run: pnpm lint
     
     - name: Run tests
-      run: pnpm test
+      run: pnpm test --run
     
     - name: Build project
       run: pnpm build
@@ -243,17 +243,21 @@ jobs:
         cd api
         echo "🔍 Running STRICT Composer security audit (fails on any vulnerability)..."
         
-        # Run composer audit and fail on ANY vulnerability
-        composer audit --format=json > composer-audit.json || AUDIT_EXIT=$?
-        
-        if [ "$AUDIT_EXIT" != "0" ]; then
-          echo "❌ CRITICAL SECURITY FAILURE: Composer audit found vulnerabilities!"
-          echo "📋 Security audit report:"
-          cat composer-audit.json
-          echo "🔧 All vulnerabilities must be resolved before deployment."
-          exit 1
+        # Run composer audit and check the JSON output
+        if composer audit --format=json > composer-audit.json; then
+          # Check if there are actual advisories in the JSON
+          if grep -q '"advisories":\s*\[.*[^][]\]' composer-audit.json; then
+            echo "❌ CRITICAL SECURITY FAILURE: Composer audit found vulnerabilities!"
+            echo "📋 Security audit report:"
+            cat composer-audit.json
+            echo "🔧 All vulnerabilities must be resolved before deployment."
+            exit 1
+          else
+            echo "✅ Composer security audit passed - no vulnerabilities found"
+          fi
         else
-          echo "✅ Composer security audit passed - no vulnerabilities found"
+          echo "❌ ERROR: Composer audit command failed"
+          exit 1
         fi
     
     - name: Container security scan
