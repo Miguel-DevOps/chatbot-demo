@@ -27,8 +27,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: latest
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -211,8 +209,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: latest
     
     - name: Install frontend dependencies for audit
       run: pnpm install --frozen-lockfile
@@ -333,8 +329,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: latest
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
