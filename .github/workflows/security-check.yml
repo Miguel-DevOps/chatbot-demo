@@ -1,6 +1,14 @@
 name: CI — Security & Build
 
-on: workflow_dispatch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run security checks daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   security-and-build:
@@ -13,9 +21,9 @@ jobs:
       - name: Setup Node.js (with pnpm cache)
         uses: actions/setup-node@v4
         with:
-        node-version: '20'
-        cache: 'pnpm'
-        
+          node-version: '20'
+          cache: 'pnpm'
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
