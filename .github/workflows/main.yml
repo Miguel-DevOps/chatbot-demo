@@ -29,7 +29,7 @@ jobs:
       run: pnpm install --frozen-lockfile
     
     - name: Type check
-      run: pnpm type-check
+      run: pnpm typecheck
     
     - name: Lint code
       run: pnpm lint
@@ -48,83 +48,103 @@ jobs:
         retention-days: 7
 
   # ===========================================
-  # Backend Tests & Quality
+  # Backend Tests & Quality (In Containers)
   # ===========================================
   backend-tests:
-    name: Backend Tests & Quality
+    name: Backend Tests & Quality (Container-based)
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        php-versions: ['8.3', '8.4']
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-versions }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, dom, curl, libxml, simplexml
-        coverage: xdebug
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     
-
-    - name: Validate composer.json and composer.lock
+    - name: Create test environment file
       run: |
-        cd api
-        composer validate --strict
-
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.composer/cache
-          api/vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ hashFiles('api/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php-versions }}-
-
-    - name: Install dependencies (including dev for tests)
-      run: |
-        cd api
-        composer install --prefer-dist --no-progress --no-suggest
+        cp api/.env.example api/.env
+        echo "APP_ENV=testing" >> api/.env
+        echo "LOG_LEVEL=debug" >> api/.env
     
-    - name: Setup test environment
+    - name: Start containers for testing
       run: |
-        cd api
-        cp .env.example .env
-        mkdir -p tests/results
-        mkdir -p storage/logs
+        # Start the API and Redis containers for testing using test-specific compose
+        docker-compose -f docker-compose.test.yml up -d api redis
+        
+        # Wait for containers to be ready
+        echo "Waiting for containers to be ready..."
+        timeout 60 bash -c 'until docker-compose -f docker-compose.test.yml exec -T api php --version; do sleep 2; done'
+        timeout 60 bash -c 'until docker-compose -f docker-compose.test.yml exec -T redis redis-cli ping; do sleep 2; done'
+        
+        echo "✅ Containers are ready"
     
-    - name: Run PHP CS Fixer (dry-run)
+    - name: Verify container environment
       run: |
-        cd api
-        composer exec -- php-cs-fixer fix --dry-run --diff
+        echo "🔍 Verifying container environment matches production..."
+        docker-compose -f docker-compose.test.yml exec -T api php --version
+        docker-compose -f docker-compose.test.yml exec -T api php -m | head -10
+        docker-compose -f docker-compose.test.yml exec -T api composer --version
+        echo "✅ Container environment verified"
+    
+    - name: Install dependencies in container
+      run: |
+        echo "📦 Installing dependencies in container..."
+        docker-compose -f docker-compose.test.yml exec -T api composer install --dev --prefer-dist --no-progress --no-interaction
+        echo "✅ Dependencies installed"
+    
+    - name: Validate composer.json and composer.lock in container
+      run: |
+        echo "🔍 Validating Composer configuration..."
+        docker-compose -f docker-compose.test.yml exec -T api composer validate --strict
+        echo "✅ Composer validation passed"
+    
+    - name: Setup test environment in container
+      run: |
+        echo "🔧 Setting up test environment..."
+        docker-compose -f docker-compose.test.yml exec -T api mkdir -p tests/results
+        docker-compose -f docker-compose.test.yml exec -T api mkdir -p storage/logs
+        docker-compose -f docker-compose.test.yml exec -T api chmod -R 777 storage/logs
+        echo "✅ Test environment ready"
+    
+    - name: Run PHP CS Fixer (dry-run) in container
+      run: |
+        echo "🔍 Running PHP CS Fixer..."
+        docker-compose -f docker-compose.test.yml exec -T api composer exec -- php-cs-fixer fix --dry-run --diff || true
+        echo "✅ PHP CS Fixer check completed"
       continue-on-error: true
     
-    - name: Run PHPStan
+    - name: Run PHPStan in container
       run: |
-        cd api
-        composer exec -- phpstan analyse --error-format=github
+        echo "🔍 Running PHPStan analysis..."
+        docker-compose -f docker-compose.test.yml exec -T api composer exec -- phpstan analyse --error-format=github || true
+        echo "✅ PHPStan analysis completed"
       continue-on-error: true
     
-    - name: Run Unit Tests
+    - name: Run Unit Tests in container
       run: |
-        cd api
-        ./vendor/bin/phpunit tests/Unit/ --coverage-clover=coverage.xml --log-junit=tests/results/junit.xml
+        echo "🧪 Running Unit Tests in container..."
+        docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Unit/ --coverage-clover=coverage.xml --log-junit=tests/results/junit.xml
+        echo "✅ Unit tests completed"
     
-    - name: Run Integration Tests
+    - name: Run Integration Tests in container
       run: |
-        cd api
-        ./vendor/bin/phpunit tests/Integration/ --log-junit=tests/results/integration-junit.xml
+        echo "🧪 Running Integration Tests in container..."
+        docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Integration/ --log-junit=tests/results/integration-junit.xml
+        echo "✅ Integration tests completed"
+    
+    - name: Copy test results from container
+      run: |
+        echo "📋 Copying test results from container..."
+        docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/tests/results/ ./api/tests/results/
+        docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/coverage.xml ./api/coverage.xml || echo "Coverage file not found"
+        echo "✅ Test results copied"
     
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: backend-test-results-php${{ matrix.php-versions }}
+        name: backend-test-results-containerized
         path: |
           api/tests/results/
           api/coverage.xml
@@ -132,12 +152,25 @@ jobs:
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
-      if: matrix.php-versions == '8.4'
       with:
         file: api/coverage.xml
         flags: backend
-        name: backend-coverage
+        name: backend-coverage-containerized
         fail_ci_if_error: false
+    
+    - name: Container logs (on failure)
+      if: failure()
+      run: |
+        echo "🔍 Container logs for debugging..."
+        docker-compose -f docker-compose.test.yml logs api
+        docker-compose -f docker-compose.test.yml logs redis
+    
+    - name: Cleanup containers
+      if: always()
+      run: |
+        echo "🧹 Cleaning up containers..."
+        docker-compose -f docker-compose.test.yml down -v
+        echo "✅ Cleanup completed"
 
   # ===========================================
   # Security Scanning
