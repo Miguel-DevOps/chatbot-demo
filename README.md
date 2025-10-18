@@ -405,8 +405,16 @@ The project includes a production-optimized Dockerfile with two stages:
 - Multi-stage build for minimal image size
 - Non-root user for security
 - Optimized PHP-FPM configuration
-- Health check integration
+- Intelligent health check system (CI-aware)
 - Proper file permissions
+
+**Smart Health Check System:**
+
+The Docker image includes an intelligent health check that adapts to different environments:
+
+- **Production/Development**: Validates full stack including Redis connectivity
+- **CI/Testing**: Automatically skips external dependencies when `GITHUB_ACTIONS` or `CI` environment variables are detected
+- **Build Verification**: Ensures container integrity without requiring full infrastructure
 
 #### Docker Compose Production Setup
 
@@ -730,6 +738,21 @@ curl "http://localhost:9090/api/v1/query?query=chatbot_api_http_requests_total"
 - `GET /health` - Basic API health status
 - `GET /api/v1/health` - Comprehensive health check with dependencies
 - `GET /api/v1/metrics` - Prometheus metrics endpoint
+
+**Health Check Intelligence:**
+
+The health check system automatically adapts based on environment:
+
+```bash
+# Production deployment - full validation including Redis
+docker run chatbot-api:latest php /usr/local/bin/healthcheck.php
+
+# CI/Build verification - skips external dependencies
+docker run -e GITHUB_ACTIONS=true chatbot-api:test php /usr/local/bin/healthcheck.php
+
+# Manual testing mode
+docker run -e HEALTHCHECK_SKIP_REDIS=true chatbot-api php /usr/local/bin/healthcheck.php
+```
 
 #### **🔧 Monitoring Configuration Files**
 

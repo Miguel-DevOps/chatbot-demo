@@ -38,7 +38,7 @@ build/
 /vendor/
 /api/vendor/
 composer.lock
-api/composer.lock
+# Note: api/composer.lock is tracked for reproducible builds
 
 # PHPUnit & Testing
 /api/.phpunit.result.cache
