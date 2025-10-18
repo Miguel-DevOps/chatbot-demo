@@ -1,0 +1,84 @@
+# .github/workflows/ci.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  quality-checks:
+    name: "Quality & Security Checks"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install JS Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run JS Linter and Type Checker
+        run: pnpm lint # Este script ahora corre eslint y tsc
+
+      - name: Run JS Security Audit
+        run: pnpm security:js
+        
+      - name: Setup PHP for Composer Audit
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          
+      - name: Run PHP Security Audit
+        run: |
+          cd api
+          composer install --no-dev --prefer-dist
+          composer audit --format=json
+
+  frontend-tests:
+    name: "Frontend Tests"
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run Frontend Tests
+        run: pnpm test
+
+  backend-tests:
+    name: "Backend Tests (Docker)"
+    runs-on: ubuntu-latest
+    needs: quality-checks
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Run Backend Tests
+        run: |
+          # Usamos el perfil 'test' para construir el contenedor de la API
+          docker-compose --profile test build
+          # Corremos los tests usando el script de npm
+          pnpm api:test
+          
+      - name: Cleanup Docker
+        if: always()
+        run: docker-compose --profile test down -v
