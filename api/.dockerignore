@@ -1,36 +1,53 @@
-# Development files
-.git
+# Version control
+.git/
 .gitignore
+.gitattributes
+
+# Environment files (keep .env.example for reference)
 .env
 .env.*
 !.env.example
 
-# Documentation
+# Documentation and config files
 *.md
+README*
+CHANGELOG*
+CONTRIBUTING*
+LICENSE*
+SECURITY*
 docs/
 .vscode/
 .idea/
+.phpstorm.meta.php
 
-# Testing and CI files (keep tests for CI builds)
-.phpunit.result.cache
+# CI/CD files (not needed in container)
 .github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+.phpunit.result.cache
 
-# Note: tests/ and phpunit.xml are needed for CI/CD pipeline
+# Development dependencies (handled by composer)
+vendor/
+node_modules/
+coverage/
+.nyc_output/
 
 # Logs and temporary files
 logs/
 storage/logs/
+data/
 *.log
 tmp/
 .tmp/
-
-# Cache and compiled files
-vendor/*/tests/
-vendor/*/docs/
-*.cache
 .cache/
 
-# OS generated files
+# Test artifacts and build outputs
+tests/results/
+build/
+dist/
+
+# OS and IDE generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -38,8 +55,27 @@ vendor/*/docs/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# IDE files
 *.swp
 *.swo
 *~
+
+# Docker specific
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Composer cache (will be built fresh)
+composer.phar
+composer.lock.bak
+
+# Runtime files not needed in build
+storage/app/
+storage/framework/
+storage/debugbar/
+
+# Development tools
+.php_cs
+.php_cs.cache
+.php-cs-fixer.cache
+phpstan.neon
+psalm.xml
