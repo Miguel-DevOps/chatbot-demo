@@ -24,6 +24,8 @@ class ChatEndpointTest extends IntegrationTestCase
 {
     private MockObject $mockChatService;
     private bool $useRealChatService = false;
+    private ?array $testRateLimitConfig = null;
+    private bool $useInMemoryRateLimitStorage = false;
 
     protected function setUp(): void
     {
@@ -261,25 +263,33 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointRateLimitingIntegration(): void
     {
-        $this->markTestSkipped('Rate limiting integration test needs configuration review');
+        // Use in-memory storage for reliable testing
+        $this->useInMemoryRateLimitStorage = true;
         
-        // Use real service for this test
+        // Configure rate limiting with very low limit for testing
+        $this->testRateLimitConfig = [
+            'max_requests' => 1, // Solo 1 request permitido
+            'time_window' => 900
+        ];
+        
+        // Use real services and reset container
         $this->useRealChatService = true;
+        $this->reconfigureApp([]);
         
-        // Cleanup cualquier DB previa
-        @unlink('/tmp/test_rate_limit_integration.db');
+        // Get the in-memory storage and ensure it's clean
+        $rateLimitService = $this->container->get(\ChatbotDemo\Services\RateLimitService::class);
+        $reflection = new \ReflectionClass($rateLimitService);
+        $storageProperty = $reflection->getProperty('storage');
+        $storageProperty->setAccessible(true);
+        $storage = $storageProperty->getValue($rateLimitService);
         
-        // Test that rate limiting is integrated (using real service)
-        // Reconfigure with very low limit for testing
-        $this->reconfigureApp([
-            'rate_limit' => [
-                'enabled' => true,
-                'max_requests' => 1, // Solo 1 request permitido
-                'time_window' => 900,
-                'database_path' => '/tmp/test_rate_limit_integration.db'
-            ]
-        ]);
-        
+        if ($storage instanceof \ChatbotDemo\Tests\Fixtures\InMemoryRateLimitStorage) {
+            $storage->clear(); // Clear any previous data
+            $this->assertTrue($storage->isHealthy(), 'Rate limit storage should be healthy');
+        } else {
+            $this->fail('Expected InMemoryRateLimitStorage but got ' . get_class($storage));
+        }
+
         // Don't configure mocks - use real services for this test
 
         // First request should work
@@ -289,6 +299,9 @@ class ChatEndpointTest extends IntegrationTestCase
         ]);
         
         $this->assertEquals(200, $response1->getStatusCode());
+        
+        // Verify that the first request was logged in storage
+        $this->assertEquals(1, $storage->getRequestsCount('127.0.0.1', time() - 900), 'First request should be logged');
 
         // Segunda request debe ser rate limited
         $response2 = $this->postJson('/chat', [
@@ -296,12 +309,14 @@ class ChatEndpointTest extends IntegrationTestCase
             'conversation_id' => null
         ]);
 
-        // Debug temporal
+        // Debug if test fails
         if ($response2->getStatusCode() !== 429) {
-            echo "Expected 429, got: " . $response2->getStatusCode() . "\n";
-            echo "Response body: " . (string) $response2->getBody() . "\n";
-            // Check if rate limit DB was created
-            echo "Rate limit DB exists: " . (file_exists('/tmp/test_rate_limit_integration.db') ? 'YES' : 'NO') . "\n";
+            $this->fail(sprintf(
+                "Expected 429 (rate limited), got %d. Response: %s. Storage stats: %s",
+                $response2->getStatusCode(),
+                (string) $response2->getBody(),
+                json_encode($storage->getStats())
+            ));
         }
 
         $this->assertEquals(429, $response2->getStatusCode());
@@ -310,8 +325,8 @@ class ChatEndpointTest extends IntegrationTestCase
         $this->assertArrayHasKey('error', $data);
         $this->assertStringContainsString('límite', strtolower($data['error'])); // Spanish text
         
-        // Cleanup
-        @unlink('/tmp/test_rate_limit_integration.db');
+        // Cleanup storage after test
+        $storage->clear();
     }
 
     protected function createTestConfig(): AppConfig
@@ -326,5 +341,15 @@ class ChatEndpointTest extends IntegrationTestCase
         }
         
         return $config;
+    }
+
+    protected function createRateLimitService(\ChatbotDemo\Config\AppConfig $config, \Psr\Log\LoggerInterface $logger): \ChatbotDemo\Services\RateLimitService
+    {
+        if ($this->useInMemoryRateLimitStorage) {
+            $storage = new \ChatbotDemo\Tests\Fixtures\InMemoryRateLimitStorage();
+            return new \ChatbotDemo\Services\RateLimitService($config, $logger, $storage);
+        }
+        
+        return parent::createRateLimitService($config, $logger);
     }
 }

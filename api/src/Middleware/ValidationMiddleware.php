@@ -19,6 +19,10 @@ class ValidationMiddleware implements MiddlewareInterface
     private const FORBIDDEN_PATTERNS = [
         // Script injection attempts
         '/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/mi',
+        // JavaScript URI schemes
+        '/javascript\s*:/i',
+        // Data URI schemes with potential scripts
+        '/data\s*:\s*text\/html/i',
         // SQL injection patterns
         '/(\bUNION\b|\bSELECT\b|\bINSERT\b|\bUPDATE\b|\bDELETE\b|\bDROP\b).*(\bFROM\b|\bWHERE\b|\bINTO\b)/i',
         // Command injection

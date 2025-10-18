@@ -10,6 +10,7 @@ use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
+
 use ChatbotDemo\Middleware\ValidationMiddleware;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\GenerativeAiClientInterface;
@@ -76,7 +77,7 @@ abstract class IntegrationTestCase extends TestCase
     /**
      * Configures the Slim application with custom DI container for testing
      */
-    private function setupApplication(): void
+    protected function setupApplication(): void
     {
         // Create container with testing configuration
         $this->container = $this->buildTestContainer();
@@ -88,6 +89,7 @@ abstract class IntegrationTestCase extends TestCase
         // Configure middleware stack (same order as production)
         $this->app->addBodyParsingMiddleware();
         $this->app->add(new ValidationMiddleware()); // Add validation middleware after body parsing
+        // Note: Rate limiting is handled in ChatController, not as middleware
         $this->app->addRoutingMiddleware();
         
         // Middleware personalizado de manejo de errores
@@ -183,6 +185,8 @@ abstract class IntegrationTestCase extends TestCase
                 return new CorsMiddleware($config, $logger);
             },
 
+
+
             ErrorHandlerMiddleware::class => function (LoggerInterface $logger, AppConfig $config, TracerInterface $tracer) {
                 return new ErrorHandlerMiddleware($logger, $config, $tracer);
             }
@@ -277,6 +281,12 @@ abstract class IntegrationTestCase extends TestCase
                 'time_window' => 900,
                 'database_path' => '/tmp/test_rate_limit.db'
             ],
+            'redis' => [
+                'host' => 'localhost',
+                'port' => 6379,
+                'password' => null,
+                'database' => 0, // Default Redis database for tests
+            ],
             'cors' => [
                 'allowed_origins' => ['*'],
                 'allowed_methods' => ['GET', 'POST', 'OPTIONS'],
@@ -345,8 +355,13 @@ abstract class IntegrationTestCase extends TestCase
 
     protected function createRateLimitService(AppConfig $config, LoggerInterface $logger): RateLimitService
     {
-        // Use RedisRateLimitStorage for testing to maintain consistency with production
-        $storage = new \ChatbotDemo\Repositories\RedisRateLimitStorage($config, $logger);
+        // Check if test wants to use in-memory storage
+        if (isset($this->testConfigOverrides['use_memory_rate_limit']) && $this->testConfigOverrides['use_memory_rate_limit']) {
+            $storage = new \ChatbotDemo\Tests\Fixtures\InMemoryRateLimitStorage();
+        } else {
+            // Use RedisRateLimitStorage for testing to maintain consistency with production
+            $storage = new \ChatbotDemo\Repositories\RedisRateLimitStorage($config, $logger);
+        }
         return new RateLimitService($config, $logger, $storage);
     }
 
