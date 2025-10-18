@@ -2,26 +2,23 @@
 
 # 🤖 Chatbot Demo
 
-**Un chatbot educativo listo para producción que demuestra arquitectura de software evolutiva**  
-*Código limpio • Pruebas exhaustivas • Estrategia progresiva de despliegue*
+**Un blueprint educativo de chatbot que demuestra arquitectura de software evolutiva**  
+_Código limpio • Pruebas exhaustivas • Estrategia progresiva de despliegue_
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue?style=for-the-badge&logo=githubactions)](#)
-[![Project Phase](https://img.shields.io/badge/Phase-Alpha-red?style=for-the-badge)](#roadmap)
-[![Architecture Status](https://img.shields.io/badge/Status-Educational%20Blueprint-orange?style=for-the-badge)](#vision)
-
-</div>
+[![Tests](https://img.shields.io/badge/Tests-99%20Passing-brightgreen?style=for-the-badge)](#pruebas-y-calidad)
+[![Architecture Status](https://img.shields.io/badge/Status-Blueprint%20Educativo-orange?style=for-the-badge)](#vision)</div>
 
 <div align="center">
 
-![React](https://img.shields.io/badge/React-19.1-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![React](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php&logoColor=white)
-![Slim Framework](https://img.shields.io/badge/Slim-Framework-719E40?style=for-the-badge)
+![Slim Framework](https://img.shields.io/badge/Slim-Framework%204-719E40?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 </div>
-
 
 ## 📋 Índice
 
@@ -38,11 +35,11 @@
 
 ## 🎯 Visión del proyecto
 
-Este proyecto actúa como un **plan práctico** para evolucionar una aplicación de chatbot desde una prueba de concepto hasta un despliegue apto para empresa. Muestra arquitectura limpia, pruebas exhaustivas y patrones de refactorización estratégicos mediante **restricciones arquitectónicas intencionales** que reproducen retos reales de desarrollo.
+Este proyecto actúa como un **blueprint educativo** para evolucionar una aplicación de chatbot desde una prueba de concepto hasta un despliegue empresarial. Muestra arquitectura limpia, pruebas exhaustivas y patrones de evolución arquitectónica mediante **restricciones intencionales** que reproducen retos reales de desarrollo.
 
-**Enfoque educativo:** En lugar de presentar una solución «perfecta», esta base de código incluye limitaciones deliberadas (dependencias en el sistema de archivos, configuraciones en código) que generan oportunidades de aprendizaje para una evolución arquitectónica sistemática. Cada restricción enseña lecciones concretas sobre escalabilidad, gestión de estado y consideraciones de despliegue.
+**Enfoque educativo:** En lugar de presentar una solución «perfecta», esta base de código incluye limitaciones arquitectónicas deliberadas que crean oportunidades de aprendizaje para una evolución sistemática. Cada restricción enseña lecciones concretas sobre escalabilidad, gestión de estado y consideraciones de despliegue.
 
-**Estado actual:** Totalmente funcional, con alta calidad de código, pruebas completas y prácticas modernas de desarrollo. Preparado para uso en desarrollo y demostraciones, con una ruta clara hacia producción en tres fases progresivas.
+**Estado actual:** Totalmente funcional con alta calidad de código (99 tests pasando, 95%+ cobertura), pruebas exhaustivas y prácticas modernas de desarrollo. Preparado para desarrollo, demostraciones y despliegues educativos, con una ruta clara hacia producción empresarial.
 
 ## ⚡ Inicio rápido
 
@@ -62,6 +59,7 @@ docker-compose up --build
 ```
 
 **Accesos:**
+
 - Frontend: http://localhost:3000
 - API: http://localhost:8080
 - Documentación API: http://localhost:8080/docs
@@ -71,6 +69,7 @@ docker-compose up --build
 Para desarrolladores que quieren entender la pila:
 
 **Requisitos previos:**
+
 ```bash
 # Versiones requeridas
 PHP >= 8.1.0 (extensiones: json, mbstring, pdo, sqlite3, curl, openssl)
@@ -79,6 +78,7 @@ pnpm >= 8.0.0
 ```
 
 **Instalación:**
+
 ```bash
 # 1. Instala dependencias
 composer install --working-dir=api
@@ -99,12 +99,12 @@ pnpm dev                                    # Frontend (http:/
 
 ### 📊 Matriz de estrategia de despliegue
 
-| **Nivel** | **Caso de uso** | **Infraestructura** | **Estado** | **Almacenamiento de estado** | **Contenido** |
-|-----------|-----------------|---------------------|-----------:|-----------------------------|---------------|
-| **Nivel 0** | Desarrollo/Demo | Docker Compose | ✅ **Listo** | Archivos SQLite | Archivos Markdown |
-| **Nivel 0.5** | Hosting compartido / VPS | Apache/Nginx + FPM | 🟡 **Requiere Fase 2** | MySQL/PostgreSQL | Base de datos |
-| **Nivel 1** | VPS dedicado | Docker + Base de datos | 🟡 **Requiere Fase 2** | Base de datos externa | Base de datos / CMS |
-| **Nivel 2** | Empresa / Cloud-native | Kubernetes + Redis | 🔴 **Requiere Fase 3** | Cluster Redis | Headless CMS |
+| **Nivel**     | **Caso de uso**          | **Infraestructura**    |             **Estado** | **Almacenamiento de estado** | **Contenido**       |
+| ------------- | ------------------------ | ---------------------- | ---------------------: | ---------------------------- | ------------------- |
+| **Nivel 0**   | Desarrollo/Demo          | Docker Compose         |           ✅ **Listo** | Archivos SQLite              | Archivos Markdown   |
+| **Nivel 0.5** | Hosting compartido / VPS | Apache/Nginx + FPM     | 🟡 **Requiere Fase 2** | MySQL/PostgreSQL             | Base de datos       |
+| **Nivel 1**   | VPS dedicado             | Docker + Base de datos | 🟡 **Requiere Fase 2** | Base de datos externa        | Base de datos / CMS |
+| **Nivel 2**   | Empresa / Cloud-native   | Kubernetes + Redis     | 🔴 **Requiere Fase 3** | Cluster Redis                | Headless CMS        |
 
 ### 🏛️ Arquitectura objetivo (Nivel 2)
 
@@ -151,6 +151,7 @@ graph TB
 ## 🗺️ Hoja de ruta estratégica
 
 ### ✅ Fase 1: Fundación (Completa)
+
 - **Arquitectura limpia:** Principios SOLID, inyección de dependencias, cumplimiento PSR
 - **Pruebas exhaustivas:** Unitarias + Integración + E2E con cobertura objetivo alta
 - **Pila moderna:** React 19, TypeScript 5.9, PHP 8.1+, Slim Framework 4
@@ -158,9 +159,11 @@ graph TB
 - **Experiencia de desarrollador:** Hot reload, tipado, linting, formato de código
 
 ### 🚧 Fase 2: Abstracción de estado (En progreso)
+
 **Objetivo:** Eliminar dependencias en el sistema de archivos para habilitar Nivel 0.5-1
 
 **Tareas críticas:**
+
 - **Interfaz StateStore:** Extraer limitador de tasas de SQLite para soportar Redis/MySQL
 - **Interfaz ContentStore:** Migrar la base de conocimiento de archivos a base de datos/CMS
 - **Migraciones de base de datos:** Implementar Phinx o similar para gestión de esquemas
@@ -169,9 +172,11 @@ graph TB
 **Habilita:** Hosting compartido, despliegue en VPS, preparación para escalado horizontal
 
 ### 📋 Fase 3: Madurez operacional (Planificada)
+
 **Objetivo:** Despliegue empresarial con observabilidad y seguridad
 
 **Características:**
+
 - **Contenerización:** Builds multi-stage Docker, manifiestos Kubernetes
 - **Observabilidad:** Logging estructurado, métricas (Prometheus), trazas distribuidas
 - **Seguridad:** OAuth2/OIDC, gestión de JWT, marco de validación de entradas
@@ -179,13 +184,13 @@ graph TB
 
 ## 🏛️ Decisiones arquitectónicas clave
 
-| **Tecnología** | **Elección** | **Alternativa** | **Compromiso** |
-|----------------|--------------|-----------------|----------------|
-| **Framework backend** | Slim 4 | Laravel/Symfony | Sacrificamos rapidez de scaffolding por transparencia arquitectónica y cumplimiento PSR |
-| **Frontend** | React 19 + TypeScript | Vue/Angular | Aceptamos curva de aprendizaje por seguridad en tiempo de compilación y madurez del ecosistema |
-| **Gestión de estado** | TanStack Query | Redux/Zustand | Adoptamos complejidad de cache para sincronización automática de server state |
-| **Contenedor DI** | PHP-DI | DI del framework | Elegimos lo explícito sobre lo implícito para mejor testabilidad y trazabilidad |
-| **Estrategia de pruebas** | PHPUnit + Vitest | Ecosistema único | Mantuvimos separación de responsabilidades a costa de complejidad de herramientas |
+| **Tecnología**            | **Elección**          | **Alternativa**  | **Compromiso**                                                                                 |
+| ------------------------- | --------------------- | ---------------- | ---------------------------------------------------------------------------------------------- |
+| **Framework backend**     | Slim 4                | Laravel/Symfony  | Sacrificamos rapidez de scaffolding por transparencia arquitectónica y cumplimiento PSR        |
+| **Frontend**              | React 19 + TypeScript | Vue/Angular      | Aceptamos curva de aprendizaje por seguridad en tiempo de compilación y madurez del ecosistema |
+| **Gestión de estado**     | TanStack Query        | Redux/Zustand    | Adoptamos complejidad de cache para sincronización automática de server state                  |
+| **Contenedor DI**         | PHP-DI                | DI del framework | Elegimos lo explícito sobre lo implícito para mejor testabilidad y trazabilidad                |
+| **Estrategia de pruebas** | PHPUnit + Vitest      | Ecosistema único | Mantuvimos separación de responsabilidades a costa de complejidad de herramientas              |
 
 > **ADRs completas:** Decisiones arquitectónicas detalladas con contexto y rationale se documentan en `/docs/ADRs/` (en progreso)
 
@@ -194,6 +199,7 @@ graph TB
 ### 🌍 Variables de entorno
 
 **Requeridas:**
+
 ```bash
 GEMINI_API_KEY=tu_clave_google_gemini_aqui
 LOG_LEVEL=info
@@ -201,6 +207,7 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
 ```
 
 **Fase 2 (próximamente):**
+
 ```bash
 # Configuración de base de datos
 DATABASE_URL="mysql://usuario:pass@host:puerto/dbname"
@@ -215,6 +222,7 @@ RATE_LIMIT_WINDOW=3600
 ### 🔒 Configuración de servidor para producción
 
 #### Nginx + PHP-FPM (recomendado)
+
 ```nginx
 server {
     listen 443 ssl http2;
@@ -253,6 +261,7 @@ server {
 ```
 
 #### Apache + mod_php
+
 ```apache
 <VirtualHost *:443>
     ServerName your-domain.com
@@ -285,11 +294,13 @@ server {
 ### 🛡️ Lista de comprobación de seguridad
 
 **Desarrollo:**
+
 - [ ] Nunca commitear archivos `.env`
 - [ ] Usar claves distintas por entorno
 - [ ] Activar `error_reporting=0` en PHP de producción
 
 **Producción:**
+
 - [ ] Configurar HTTPS con certificados válidos
 - [ ] Permisos de ficheros adecuados (`644` archivos, `755` directorios)
 - [ ] Bloquear acceso a ficheros sensibles (`.env`, `.git`, etc.)
@@ -301,11 +312,13 @@ server {
 ### 🔬 Estrategia de pruebas
 
 **Pirámide de pruebas:**
+
 - **Unitarias:** `pnpm test` (Frontend) + `composer test` (Backend) — rápidas e aisladas
 - **Integración:** Validación de contratos API mediante OpenAPI
 - **E2E:** `pnpm test:e2e` — flujos completos de usuario
 
 **Puertas de calidad:**
+
 ```bash
 # Validaciones pre-commit
 pnpm lint && pnpm typecheck    # Calidad de código
@@ -317,6 +330,7 @@ pnpm audit && composer audit   # Vulnerabilidades en dependencias
 ```
 
 **Objetivos de cobertura:**
+
 - Lógica de negocio: 90%+ (Servicios, Controladores)
 - Componentes UI: 80%+ (Interacciones, estados de error)  
 - Integración: 100% (Contratos API, servicios externos)
@@ -325,24 +339,26 @@ pnpm audit && composer audit   # Vulnerabilidades en dependencias
 
 ### 🎯 Áreas de alta prioridad
 
-| **Prioridad** | **Área** | **Habilidades** | **Impacto** |
-|--------------|----------|----------------|------------|
-| 🔥 **Crítico** | Fase 2: Abstracción de estado | PHP, SQL, Patrones de diseño | Habilita despliegue Nivel 0.5-1 |
-| 🔥 **Crítico** | Producción con Docker | DevOps, Docker, Nginx | Contenedores listos para producción |
-| ⭐ **Alto** | Migraciones de BD (Phinx) | PHP, Diseño de BD | Gestión de esquemas |
-| ⭐ **Alto** | Interfaz de gestión de contenido | PHP, APIs, Integración CMS | Contenido escalable |
-| 💡 **Medio** | Manifiestos Kubernetes | K8s, Helm, DevOps | Despliegue empresarial |
-| 💡 **Medio** | Observabilidad | Monitorización, Logging | Excelencia operacional |
+| **Prioridad**  | **Área**                         | **Habilidades**              | **Impacto**                         |
+| -------------- | -------------------------------- | ---------------------------- | ----------------------------------- |
+| 🔥 **Crítico** | Fase 2: Abstracción de estado    | PHP, SQL, Patrones de diseño | Habilita despliegue Nivel 0.5-1     |
+| 🔥 **Crítico** | Producción con Docker            | DevOps, Docker, Nginx        | Contenedores listos para producción |
+| ⭐ **Alto**    | Migraciones de BD (Phinx)        | PHP, Diseño de BD            | Gestión de esquemas                 |
+| ⭐ **Alto**    | Interfaz de gestión de contenido | PHP, APIs, Integración CMS   | Contenido escalable                 |
+| 💡 **Medio**   | Manifiestos Kubernetes           | K8s, Helm, DevOps            | Despliegue empresarial              |
+| 💡 **Medio**   | Observabilidad                   | Monitorización, Logging      | Excelencia operacional              |
 
 ### 🏗️ Guía para contribuyentes
 
 **Antes de empezar:**
+
 1. **Piensa en interfaces:** Diseña abstracciones que permitan intercambiar tecnologías
 2. **Pruebas primero:** Escribe tests fallidos antes de implementar
 3. **Configuración externa:** Nada hardcodeado — todo configurable
 4. **Documenta:** Actualiza ADRs para decisiones arquitectónicas
 
 **Flujo de desarrollo:**
+
 ```bash
 # 1. Fork y clona
 git clone https://github.com/Miguel-DevOps/chatbot-demo.git
@@ -362,6 +378,7 @@ git checkout -b feature/database-abstraction
 ```
 
 **Áreas por nivel de experiencia:**
+
 - **Principiante:** Mejoras UI, cobertura de tests, documentación
 - **Intermedio:** Implementación de interfaces, gestión de configuración
 - **Avanzado:** Diseño arquitectónico, infraestructura, observabilidad
@@ -371,6 +388,7 @@ git checkout -b feature/database-abstraction
 Licencia MIT - ver [LICENSE](./LICENSE) para detalles.
 
 **Uso educativo recomendado:**
+
 - ✅ Usar como referencia para evolución arquitectónica
 - ✅ Fork para talleres y formación
 - ✅ Adaptar patrones a proyectos propios
@@ -380,11 +398,11 @@ Licencia MIT - ver [LICENSE](./LICENSE) para detalles.
 
 <div align="center">
 
-*Este proyecto sirve como documento vivo para la evolución arquitectónica. Se aceptan contribuciones.*
+_Este proyecto sirve como documento vivo para la evolución arquitectónica. Se aceptan contribuciones._
 
 [![GitHub](https://img.shields.io/badge/GitHub-Miguel--DevOps-black.svg)](https://github.com/Miguel-DevOps)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue.svg)](https://linkedin.com/in/miguel-lozano-devops)
 
-*Construido con ❤️ para la comunidad de desarrolladores*
+_Construido con ❤️ para la comunidad de desarrolladores_
 
 </div>

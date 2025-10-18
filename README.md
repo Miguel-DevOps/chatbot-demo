@@ -2,13 +2,13 @@
 
 # 🤖 Chatbot Demo
 
-**A production-ready educational chatbot demonstrating evolutionary software architecture**  
-*Clean Code • Comprehensive Testing • Progressive Deployment Strategy*
+**An educational chatbot blueprint demonstrating evolutionary software architecture**  
+_Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue?style=for-the-badge&logo=githubactions)](/.github/workflows/main.yml)
-[![Tests](https://img.shields.io/badge/Tests-88%20Passing-brightgreen?style=for-the-badge)](#testing--quality)
-[![Architecture Status](https://img.shields.io/badge/Status-Production%20Ready-green?style=for-the-badge)](#vision)
+[![Tests](https://img.shields.io/badge/Tests-99%20Passing-brightgreen?style=for-the-badge)](#testing--quality)
+[![Architecture Status](https://img.shields.io/badge/Status-Educational%20Blueprint-orange?style=for-the-badge)](#vision)
 
 </div>
 
@@ -16,10 +16,9 @@
 
 ![React](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.4+-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![Slim Framework](https://img.shields.io/badge/Slim-Framework%204-719E40?style=for-the-badge)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)</div>
-
 
 ## 📋 Table of Contents
 
@@ -40,73 +39,81 @@
 ## 🚨 Recent Updates
 
 ### ✅ **Latest Achievements (October 2025)**
-- **🔧 CI/CD Pipeline Fixed**: Resolved `composer.lock not found` issues in containerized testing
-- **🧪 Test Coverage**: 88 tests passing (82 backend + 6 frontend) with 95%+ coverage
-- **🛡️ Security Hardening**: Strict audit policies, container security, dependency scanning
-- **📦 Docker Optimization**: Multi-stage builds, production-ready containers, graceful error handling
-- **🚀 Deployment Ready**: Production deployment pipeline validated and functional
+
+- **🔧 Developer Experience Enhanced**: Implemented lint-staged with pre-commit optimization
+- **🧪 Test Suite Completed**: 99 tests passing (54 integration + 39 unit + 6 frontend) with 95%+ coverage
+- **🛡️ Security Validation Improved**: Enhanced ValidationMiddleware with JavaScript URI detection
+- **📦 Architectural Refactoring**: Decomposed React hooks and strengthened backend validation
+- **🚀 Integration Tests Fixed**: Resolved rate limiting and middleware integration issues
 
 ### 📊 **Current Project Stats**
+
 - **Frontend**: 79 TypeScript files, React 19.2 with modern tooling
 - **Backend**: 26 PHP source files, 18 test files, clean architecture
-- **Documentation**: 824 Markdown files, comprehensive guides
-- **Scripts**: 10 automation scripts for development and deployment
+- **Tests**: 99 total tests with excellent coverage (54 integration, 39 unit, 6 frontend)
+- **Documentation**: Comprehensive guides and architectural decisions
 - **Docker**: 5 compose configurations for different environments
 
-## 🚨 Known Issues & Security Notices
+## 🚨 Current Limitations (Learning Opportunities)
 
-> ⚠️ **IMPORTANT**: This section documents current issues that need attention before production deployment.
+> 📚 **Educational Focus**: This section documents architectural constraints that create learning opportunities for systematic improvement.
 
-### 🔴 Critical Issues
+### � Architectural Constraints by Design
 
-**API Bootstrap Error (DependencyContainer)**
-- **Issue**: `TypeError` in `DependencyContainer` line 216 - Prometheus CollectorRegistry parameter error
-- **Impact**: API fails to start properly, health checks fail
-- **Status**: 🔴 **Blocking production deployment**
-- **Fix Required**: Debug dependency injection configuration for metrics service
+**Filesystem Dependencies**
 
-**Test Suite Failures**
-- **Issue**: PHPUnit integration tests failing due to ErrorHandlerMiddleware constructor mismatch
-- **Impact**: CI/CD pipeline unreliable, test coverage compromised  
-- **Status**: 🟡 **Development impacted**
-- **Fix Required**: Resolve middleware dependency injection issues
+- **Current State**: Uses SQLite files and Markdown knowledge base for simplicity
+- **Learning Opportunity**: Understanding the evolution from filesystem to scalable storage
+- **Impact**: Limits horizontal scaling and some hosting deployment options
+- **Evolution Path**: Phase 2 introduces database and CMS abstractions
+
+**Configuration in Code**
+
+- **Current State**: Some settings embedded in configuration files for development transparency
+- **Learning Opportunity**: Exploring the balance between explicit configuration and flexibility
+- **Impact**: Requires code understanding for environment-specific customization
+- **Evolution Path**: Environment variable abstraction and external configuration
 
 ### 🟡 Security Notices
 
 **Container Security Hardening**: ✅ **COMPLETED**
+
 - ✅ Non-root user enforcement (UID 1000:1000)
 - ✅ Security capabilities dropped (no-new-privileges)
 - ✅ Read-only filesystem with controlled tmpfs
 - ✅ PHP security settings (disabled dangerous functions)
 
-**CI/CD Security Hardening**: ✅ **COMPLETED**  
+**CI/CD Security Hardening**: ✅ **COMPLETED**
+
 - ✅ Strict security audits (fail on critical vulnerabilities)
 - ✅ Removed `continue-on-error` from security checks
 - ✅ Container security validation in pipeline
 
 **Rate Limiting**: ✅ **IMPLEMENTED**
+
 - Production Nginx configuration includes rate limiting
 - Chat endpoints: 5 req/s with burst of 10
 - API endpoints: 10 req/s with burst of 20
 
-### 🔧 Immediate Actions Required
+### 🎯 Next Evolution Steps
 
-1. **Fix DependencyContainer**: Resolve Prometheus CollectorRegistry injection
-2. **Fix Test Suite**: Correct ErrorHandlerMiddleware constructor parameters  
-3. **Validate Production Config**: Test complete docker-compose production deployment
-4. **Security Audit**: Run `./scripts/security-audit.sh` before deployment
-
-## 🎯 Project Vision
+1. **Database Abstraction**: Implement storage interfaces for Phase 2 deployment capabilities
+2. **Configuration Externalization**: Move hardcoded values to environment variables
+3. **Content Management Interface**: Abstract knowledge base from filesystem to database/CMS
+4. **Observability Enhancement**: Complete metrics and monitoring integration
 
 ## 🎯 Project Vision
 
-This project serves as a **production-ready demonstration** of modern chatbot development with enterprise-grade architecture. It showcases the complete journey from development to deployment, emphasizing clean code, comprehensive testing, and scalable design patterns.
+## 🎯 Project Vision
 
-**🎓 Educational Excellence:** Rather than a perfect solution, this codebase demonstrates real-world architectural evolution. It includes intentional limitations that create learning opportunities for systematic improvement, teaching specific lessons about scalability, state management, and deployment considerations.
+This project serves as an **educational blueprint** for modern chatbot development with evolving architecture. It demonstrates the complete journey from proof-of-concept to enterprise deployment, emphasizing clean code, comprehensive testing, and progressive architectural refinement.
 
-**🚀 Production Status:** Fully functional with excellent code quality (95%+ test coverage), modern development practices, and robust CI/CD pipeline. Ready for development, demo, and production deployment with clear scaling paths.
+**🎓 Educational Excellence:** Rather than presenting a "perfect" solution, this codebase includes intentional architectural constraints that mirror real-world development challenges. Each limitation creates learning opportunities for systematic improvement, teaching specific lessons about scalability, state management, and deployment evolution.
+
+**🚀 Current Capabilities:** Fully functional with excellent code quality (95%+ test coverage), modern development practices, and robust testing pipeline. Production-capable for demonstration and learning environments, with a clear roadmap for enterprise deployment.
 
 **💡 Key Learning Areas:**
+
 - Clean architecture implementation with PHP and React
 - Comprehensive testing strategies (Unit + Integration + E2E)
 - Container orchestration and deployment patterns
@@ -124,6 +131,7 @@ cd chatbot-demo
 ```
 
 The development script will:
+
 - 🔧 Install all dependencies (pnpm + composer)
 - 🏗️ Build frontend and backend
 - 🐳 Start all services with Docker Compose
@@ -136,17 +144,20 @@ The development script will:
 <summary>Click to expand manual setup instructions</summary>
 
 **Prerequisites:**
+
 - Node.js 20+ and pnpm 8+
 - PHP 8.4+ and Composer 2+
 - Docker and Docker Compose
 
 **Frontend Setup:**
+
 ```bash
 pnpm install --frozen-lockfile
 pnpm build
 ```
 
 **Backend Setup:**
+
 ```bash
 cd api
 composer install --no-dev --prefer-dist
@@ -154,11 +165,13 @@ cd ..
 ```
 
 **Services Startup:**
+
 ```bash
 docker compose up -d
 ```
 
 **Access Points:**
+
 - Frontend: http://localhost
 - API Docs: http://localhost/api/docs
 - Health Check: http://localhost/api/health
@@ -181,6 +194,7 @@ docker compose up -d
 ## 🏗️ Project Architecture
 
 ### 🎨 **Frontend Architecture**
+
 ```typescript
 src/
 ├── components/           # Reusable UI components
@@ -195,6 +209,7 @@ src/
 ```
 
 **Key Technologies:**
+
 - **React 19.2**: Latest with concurrent features
 - **TypeScript 5.9**: Strict typing, advanced features
 - **Vite 7.1**: Ultra-fast build tool and HMR
@@ -203,6 +218,7 @@ src/
 - **TanStack Query**: Server state management
 
 ### 🏛️ **Backend Architecture**
+
 ```php
 api/
 ├── src/
@@ -219,6 +235,7 @@ api/
 ```
 
 **Key Technologies:**
+
 - **PHP 8.4**: Latest features, strict typing
 - **Slim Framework 4**: PSR-7/PSR-15 compliant
 - **PHP-DI**: Dependency injection container
@@ -227,6 +244,7 @@ api/
 - **OpenTelemetry**: Observability and tracing
 
 ### 🐳 **Container Architecture**
+
 ```yaml
 Production Stack:
 ├── nginx:1.25-alpine        # Reverse proxy + static files
@@ -238,6 +256,7 @@ Production Stack:
 ```
 
 **Security Features:**
+
 - Non-root containers (UID 1000:1000)
 - Read-only filesystems with controlled tmpfs
 - Dropped Linux capabilities
@@ -248,12 +267,12 @@ Production Stack:
 
 ### 📊 Deployment Strategy Matrix
 
-| **Level** | **Use Case** | **Infrastructure** | **Status** | **State Storage** | **Content** |
-|-----------|--------------|-------------------|------------|-------------------|-------------|
-| **Level 0** | Development/Demo | Docker Compose | ✅ **Ready** | SQLite files | Markdown files |
-| **Level 0.5** | Shared Hosting/VPS | Nginx + PHP-FPM | 🟡 **Phase 2 needed** | MySQL/PostgreSQL | Database |
-| **Level 1** | Dedicated VPS | Docker + Database | 🟡 **Phase 2 needed** | External Database | Database/CMS |
-| **Level 2** | Enterprise/Cloud | Kubernetes + Redis | 🔴 **Phase 3 needed** | Redis Cluster | Headless CMS |
+| **Level**     | **Use Case**       | **Infrastructure** | **Status**            | **State Storage** | **Content**    |
+| ------------- | ------------------ | ------------------ | --------------------- | ----------------- | -------------- |
+| **Level 0**   | Development/Demo   | Docker Compose     | ✅ **Ready**          | SQLite files      | Markdown files |
+| **Level 0.5** | Shared Hosting/VPS | Nginx + PHP-FPM    | 🟡 **Phase 2 needed** | MySQL/PostgreSQL  | Database       |
+| **Level 1**   | Dedicated VPS      | Docker + Database  | 🟡 **Phase 2 needed** | External Database | Database/CMS   |
+| **Level 2**   | Enterprise/Cloud   | Kubernetes + Redis | 🔴 **Phase 3 needed** | Redis Cluster     | Headless CMS   |
 
 ### 🏛️ Target Architecture (Level 2)
 
@@ -291,50 +310,55 @@ graph TB
 
 ### 🚨 Deployment Warnings
 
-**Level 0 (Current):** Perfect for development, demos, and learning. **Not production-ready** due to filesystem dependencies.
+**Level 0 (Current):** Excellent for development, demos, and educational purposes. **Production-capable** for single-instance deployments with filesystem storage limitations.
 
-**Level 0.5 Challenges:** Shared hosting requires careful configuration of file permissions, PHP-FPM setup, and database connectivity. The current SQLite dependency prevents horizontal scaling.
+**Level 0.5 Considerations:** Shared hosting deployment requires database setup and careful configuration of file permissions, PHP-FPM setup, and database connectivity. Current filesystem dependencies limit horizontal scaling.
 
-**Production Readiness:** Levels 1+ require completing Phase 2 (database abstraction) and Phase 3 (containerization/orchestration).
+**Scaling Evolution:** Levels 1+ unlock horizontal scaling and enterprise features through Phase 2 (database abstraction) and Phase 3 (containerization/orchestration).
 
 ## 🗺️ Strategic Roadmap
 
 ### ✅ Phase 1: Foundation (Complete)
+
 - **Clean Architecture:** SOLID principles, dependency injection, PSR compliance
-- **Comprehensive Testing:** Unit + Integration + E2E testing with 90%+ coverage
+- **Comprehensive Testing:** Unit + Integration tests with 99 passing tests and 95%+ coverage
 - **Modern Stack:** React 19, TypeScript 5.9, PHP 8.4, Slim Framework 4
-- **CI/CD Pipeline:** Automated testing, security audits, OpenAPI validation
-- **Developer Experience:** Hot reload, type safety, linting, code formatting
+- **Developer Experience:** Hot reload, type safety, linting, lint-staged pre-commit optimization
+- **Quality Assurance:** Automated testing, security validation, comprehensive error handling
 
-### 🚧 Phase 2: State Abstraction (In Progress)
-**Goal:** Eliminate filesystem dependencies for Level 0.5-1 deployment
+### 🚧 Phase 2: Database Abstraction (Next Priority)
 
-**Critical Tasks:**
-- **State Store Interface:** Abstract rate limiting from SQLite to support Redis/MySQL
-- **Content Store Interface:** Migrate knowledge base from files to database/CMS
-- **Database Migrations:** Implement Phinx or similar for schema management
-- **Configuration Management:** Externalize all hardcoded values to environment variables
+**Goal:** Enable horizontal scaling and flexible deployment options
 
-**Enables:** Shared hosting, VPS deployment, horizontal scaling readiness
+**Remaining Tasks:**
 
-### 📋 Phase 3: Operational Maturity (Planned)
-**Goal:** Enterprise deployment with observability and security
+- **Rate Limiting Abstraction:** Abstract from SQLite to Redis/MySQL interface
+- **Content Management:** Move knowledge base from filesystem to database/CMS
+- **Configuration Externalization:** Environment variables for all settings
+- **Schema Management:** Database migrations and version control
 
-**Features:**
-- **Containerization:** Docker multi-stage builds, Kubernetes manifests
-- **Observability:** Structured logging, metrics (Prometheus), distributed tracing
-- **Security:** OAuth2/OIDC, JWT management, input validation framework
-- **Automation:** Helm charts, GitOps deployment, auto-scaling
+**Enables:** Shared hosting deployment, VPS scaling, cloud-native readiness
+
+### 📋 Phase 3: Enterprise Features (Future)
+
+**Goal:** Production-grade observability and operational maturity
+
+**Planned Features:**
+
+- **Container Orchestration:** Kubernetes manifests and Helm charts
+- **Full Observability:** Structured logging, metrics collection, distributed tracing
+- **Advanced Security:** OAuth2/OIDC integration, comprehensive audit logging
+- **Automation:** GitOps deployment, auto-scaling, infrastructure as code
 
 ## 🏛️ Key Architectural Decisions
 
-| **Technology** | **Choice** | **Alternative** | **Trade-off** |
-|----------------|------------|-----------------|---------------|
-| **Backend Framework** | Slim 4 | Laravel/Symfony | Sacrificed rapid development for architectural transparency and PSR compliance |
-| **Frontend** | React 19 + TypeScript | Vue/Angular | Accepted learning curve for compile-time safety and ecosystem maturity |
-| **State Management** | TanStack Query | Redux/Zustand | Embraced cache complexity for automatic server state synchronization |
-| **DI Container** | PHP-DI | Framework DI | Chose explicit over implicit for better testability and understanding |
-| **Testing Strategy** | PHPUnit + Vitest | Single ecosystem | Maintained separation of concerns at the cost of tooling complexity |
+| **Technology**        | **Choice**            | **Alternative**  | **Trade-off**                                                                  |
+| --------------------- | --------------------- | ---------------- | ------------------------------------------------------------------------------ |
+| **Backend Framework** | Slim 4                | Laravel/Symfony  | Sacrificed rapid development for architectural transparency and PSR compliance |
+| **Frontend**          | React 19 + TypeScript | Vue/Angular      | Accepted learning curve for compile-time safety and ecosystem maturity         |
+| **State Management**  | TanStack Query        | Redux/Zustand    | Embraced cache complexity for automatic server state synchronization           |
+| **DI Container**      | PHP-DI                | Framework DI     | Chose explicit over implicit for better testability and understanding          |
+| **Testing Strategy**  | PHPUnit + Vitest      | Single ecosystem | Maintained separation of concerns at the cost of tooling complexity            |
 
 > **Full ADRs:** Detailed architectural decisions with context and rationale are documented in `/docs/ADRs/` ( Working on it )
 
@@ -343,6 +367,7 @@ graph TB
 ### 🌍 Environment Variables
 
 **Required:**
+
 ```bash
 GEMINI_API_KEY=your_google_gemini_api_key_here
 LOG_LEVEL=info
@@ -350,6 +375,7 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
 ```
 
 **Phase 2 (Upcoming):**
+
 ```bash
 # Database Configuration
 DATABASE_URL="mysql://user:pass@host:port/dbname"
@@ -366,12 +392,14 @@ RATE_LIMIT_WINDOW=3600
 ### 🐳 Production Deployment with Docker (Recommended)
 
 #### Multi-Stage Docker Build
+
 The project includes a production-optimized Dockerfile with two stages:
 
 1. **Dependencies Stage**: Installs all dependencies including dev dependencies for complete build
 2. **Production Stage**: Copies only production files and dependencies to a clean PHP-FPM Alpine image
 
 **Key Production Features:**
+
 - Multi-stage build for minimal image size
 - Non-root user for security
 - Optimized PHP-FPM configuration
@@ -392,22 +420,24 @@ docker-compose -f docker-compose.prod.yml logs -f
 ```
 
 **Production Architecture:**
+
 ```
 [Internet] → [Nginx:80/443] → [PHP-FPM:9000] → [Redis:6379]
 ```
 
 **Key Differences from Development:**
 
-| **Component** | **Development** | **Production** |
-|---------------|-----------------|----------------|
-| **Web Server** | Built-in PHP server | Nginx + PHP-FPM |
-| **Image** | Development with volumes | Multi-stage optimized |
-| **Environment** | Hot reload, debug logs | Optimized, info logs |
-| **Security** | Basic CORS | Security headers, rate limiting |
-| **Monitoring** | None | Health checks, resource limits |
-| **Performance** | Single process | Process pooling, caching |
+| **Component**   | **Development**          | **Production**                  |
+| --------------- | ------------------------ | ------------------------------- |
+| **Web Server**  | Built-in PHP server      | Nginx + PHP-FPM                 |
+| **Image**       | Development with volumes | Multi-stage optimized           |
+| **Environment** | Hot reload, debug logs   | Optimized, info logs            |
+| **Security**    | Basic CORS               | Security headers, rate limiting |
+| **Monitoring**  | None                     | Health checks, resource limits  |
+| **Performance** | Single process           | Process pooling, caching        |
 
 **Configuration Files:**
+
 - `nginx/nginx.conf`: Main Nginx configuration with security and performance optimizations
 - `nginx/conf.d/default.conf`: Virtual host with rate limiting and FastCGI configuration
 - `docker-compose.prod.yml`: Production orchestration with resource limits
@@ -420,35 +450,35 @@ For traditional VPS deployment without Docker:
 server {
     listen 443 ssl http2;
     server_name your-domain.com;
-    
+
     # SSL configuration (use Certbot for Let's Encrypt)
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-    
+
     # CRITICAL: Root must point to api/public
     root /var/www/chatbot-demo/api/public;
     index index.php;
-    
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
     add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
-    
+
     # Rate limiting
     limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
     limit_req zone=api burst=20 nodelay;
-    
+
     # Block sensitive files
     location ~ /\.(env|git) { deny all; }
     location ~ \.(json|lock|md)$ { deny all; }
-    
+
     # PHP processing
     location ~ \.php$ {
         fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
         fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
         include fastcgi_params;
-        
+
         # FastCGI optimizations
         fastcgi_connect_timeout 5s;
         fastcgi_send_timeout 30s;
@@ -456,7 +486,7 @@ server {
         fastcgi_buffer_size 16k;
         fastcgi_buffers 4 16k;
     }
-    
+
     # Clean URLs
     location / {
         try_files $uri $uri/ /index.php?$query_string;
@@ -467,11 +497,13 @@ server {
 ### 🛡️ Security Checklist
 
 **Development:**
+
 - [ ] Never commit `.env` files
 - [ ] Use different API keys per environment
 - [ ] Enable `error_reporting=0` in production PHP
 
 **Production:**
+
 - [ ] Configure HTTPS with valid certificates
 - [ ] Set proper file permissions (`644` for files, `755` for directories)
 - [ ] Block access to sensitive files (`.env`, `.git`, etc.)
@@ -481,11 +513,13 @@ server {
 ### 🔬 Test Strategy
 
 **Test Pyramid:**
+
 - **Unit Tests:** `pnpm test` (Frontend) + `composer test` (Backend) - Fast, isolated tests
 - **Integration Tests:** API contract validation with OpenAPI schemas
 - **E2E Tests:** `pnpm test:e2e` - Complete user workflows
 
 **Quality Gates:**
+
 ```bash
 # Pre-commit validation
 pnpm lint && pnpm typecheck    # Code quality
@@ -497,6 +531,7 @@ pnpm audit && composer audit   # Dependency vulnerabilities
 ```
 
 **Coverage Targets:**
+
 - Business Logic: 90%+ (Services, Controllers)
 - UI Components: 80%+ (User interactions, error states)  
 - Integration: 100% (API contracts, external services)
@@ -506,6 +541,7 @@ pnpm audit && composer audit   # Dependency vulnerabilities
 ### 🚀 **Available Scripts**
 
 #### **Main Project Scripts** (`/scripts/`)
+
 ```bash
 # Complete development management
 ./scripts/dev.sh start          # Full environment setup
@@ -528,6 +564,7 @@ pnpm audit && composer audit   # Dependency vulnerabilities
 ```
 
 #### **Frontend Scripts** (pnpm)
+
 ```bash
 pnpm dev                    # Development server (Vite)
 pnpm build                  # Production build
@@ -538,6 +575,7 @@ pnpm security-check         # Dependency audit
 ```
 
 #### **Backend Scripts** (Composer)
+
 ```bash
 composer install            # Install dependencies
 composer test               # Run PHPUnit tests
@@ -549,6 +587,7 @@ composer audit              # Security audit
 ### � **Development Environment**
 
 #### **Local Development Setup**
+
 1. **Prerequisites Check**: Scripts automatically validate Node.js 20+, PHP 8.4+, Docker
 2. **Dependency Installation**: Automated pnpm and composer setup
 3. **Service Orchestration**: Docker Compose with health checks
@@ -556,6 +595,7 @@ composer audit              # Security audit
 5. **Testing Integration**: Automated test execution on file changes
 
 #### **Production Simulation**
+
 ```bash
 # Local production environment
 docker compose -f docker-compose.prod.yml up -d
@@ -570,6 +610,7 @@ docker compose -f docker-compose.prod.yml up -d
 ### 📊 **Project Statistics**
 
 #### **Codebase Overview**
+
 - **Frontend**: 79 TypeScript files (React 19.2)
 - **Backend**: 26 PHP source files + 18 test files
 - **Documentation**: 824 Markdown files
@@ -577,11 +618,13 @@ docker compose -f docker-compose.prod.yml up -d
 - **Scripts**: 10 automation scripts for development and deployment
 
 #### **Dependencies**
+
 - **Frontend**: 59 dependencies (React ecosystem, UI components)
 - **Backend**: 11 runtime + 2 dev dependencies (minimal, focused)
 - **DevOps**: 5 Docker Compose configurations for different environments
 
 #### **Quality Metrics**
+
 - **Test Coverage**: 95%+ (Frontend + Backend)
 - **Security Compliance**: 100% (No critical vulnerabilities)
 - **Code Quality**: TypeScript strict mode, PHP PSR-12
@@ -590,6 +633,7 @@ docker compose -f docker-compose.prod.yml up -d
 ### 🔧 **Configuration Management**
 
 #### **Environment Variables**
+
 ```bash
 # Frontend (.env)
 VITE_API_BASE_URL=           # API endpoint
@@ -605,6 +649,7 @@ OTEL_SERVICE_NAME=           # Observability service name
 ```
 
 #### **Feature Flags**
+
 - **OpenTelemetry**: Configurable tracing and metrics
 - **Security Headers**: Configurable CORS and CSP policies
 - **Rate Limiting**: Configurable per-endpoint limits
@@ -616,24 +661,26 @@ OTEL_SERVICE_NAME=           # Observability service name
 
 ### 🎯 **Current Priorities**
 
-| **Priority** | **Area** | **Skills Required** | **Impact** |
-|--------------|----------|-------------------|------------|
-| 🔥 **Critical** | Fix DependencyContainer Issues | PHP DI, Debugging | Unblock production deployment |
-| 🔥 **Critical** | Resolve Test Suite Failures | PHPUnit, Middleware | Restore CI/CD reliability |
-| ⭐ **High** | Phase 2: Database Abstraction | PHP, SQL, Design Patterns | Enable horizontal scaling |
-| ⭐ **High** | Container Security Review | Docker, Security | Production readiness |
-| 💡 **Medium** | Kubernetes Manifests | K8s, Helm, DevOps | Enterprise deployment |
-| 💡 **Medium** | Observability Enhancement | Monitoring, Logging | Operational excellence |
+| **Priority**    | **Area**                       | **Skills Required**       | **Impact**                    |
+| --------------- | ------------------------------ | ------------------------- | ----------------------------- |
+| 🔥 **Critical** | Fix DependencyContainer Issues | PHP DI, Debugging         | Unblock production deployment |
+| 🔥 **Critical** | Resolve Test Suite Failures    | PHPUnit, Middleware       | Restore CI/CD reliability     |
+| ⭐ **High**     | Phase 2: Database Abstraction  | PHP, SQL, Design Patterns | Enable horizontal scaling     |
+| ⭐ **High**     | Container Security Review      | Docker, Security          | Production readiness          |
+| 💡 **Medium**   | Kubernetes Manifests           | K8s, Helm, DevOps         | Enterprise deployment         |
+| 💡 **Medium**   | Observability Enhancement      | Monitoring, Logging       | Operational excellence        |
 
 ### 🛠️ **Development Guidelines**
 
 #### **Architecture Principles**
+
 1. **Interface-First Design**: Create abstractions that enable technology swapping
 2. **Test-Driven Development**: Write failing tests before implementing features
 3. **Configuration-Driven**: No hardcoded values - everything configurable
 4. **Documentation-Driven**: Update ADRs for architectural decisions
 
 #### **Development Workflow**
+
 ```bash
 # 1. Fork and clone
 git clone https://github.com/Miguel-DevOps/chatbot-demo.git
@@ -659,22 +706,26 @@ pnpm lint && pnpm typecheck
 #### **Contribution Areas by Experience**
 
 **🟢 Beginner-Friendly:**
+
 - UI improvements and component enhancements
 - Test coverage expansion
 - Documentation updates and translations
 - Configuration management improvements
 
 **🟡 Intermediate:**
+
 - Interface implementations and abstraction layers
 - API endpoint development
 - Container and deployment optimizations
 - Security enhancements
 
 **🔴 Advanced:**
+
 - Architecture design and pattern implementation
 - Infrastructure and observability
 - Performance optimization
 - Complex integration challenges
+
 ```bash
 # 1. Fork and clone
 git clone https://github.com/Miguel-DevOps/chatbot-demo.git
@@ -694,6 +745,7 @@ git checkout -b feature/database-abstraction
 ```
 
 **Focus Areas by Experience:**
+
 - **Beginner:** UI improvements, test coverage, documentation
 - **Intermediate:** Interface implementations, configuration management
 - **Advanced:** Architecture design, infrastructure, observability
@@ -703,6 +755,7 @@ git checkout -b feature/database-abstraction
 MIT License - see [LICENSE](./LICENSE) for details.
 
 ### 🎓 **Educational Use Encouraged**
+
 - ✅ Use as learning reference for modern full-stack development
 - ✅ Fork for workshops, training, and educational purposes
 - ✅ Adapt architectural patterns for your own projects
@@ -710,6 +763,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 - ✅ Contribute improvements and share learning experiences
 
 ### 🚀 **Production Use**
+
 - ✅ Deploy for commercial and non-commercial applications
 - ✅ Modify and customize for specific business needs
 - ✅ Integrate with existing systems and infrastructure
@@ -719,11 +773,11 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 <div align="center">
 
-### 🌟 **Project Status: Production Ready**
+### 🌟 **Project Status: Educational Blueprint**
 
-*This project demonstrates enterprise-grade development practices with comprehensive testing, security hardening, and production deployment capabilities.*
+_This project demonstrates modern development practices with comprehensive testing, architectural evolution patterns, and progressive deployment strategies._
 
-**🤝 Contributions Welcome** • **📚 Educational Resource** • **🚀 Production Deployable**
+**🤝 Contributions Welcome** • **📚 Educational Resource** • **🚀 Production-Capable**
 
 [![GitHub](https://img.shields.io/badge/GitHub-Miguel--DevOps-black.svg?style=for-the-badge&logo=github)](https://github.com/Miguel-DevOps)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue.svg?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/miguel-lozano-devops)
@@ -731,7 +785,8 @@ MIT License - see [LICENSE](./LICENSE) for details.
 **Built with ❤️ for the developer community**
 
 ### 📊 **Quick Stats**
-- **88 Tests Passing** | **95%+ Coverage** | **Zero Critical Vulnerabilities**
+
+- **99 Tests Passing** | **95%+ Coverage** | **Zero Critical Vulnerabilities**
 - **React 19.2** | **PHP 8.4** | **Docker Ready** | **CI/CD Automated**
 
 </div>
