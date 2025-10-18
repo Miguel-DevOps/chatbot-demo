@@ -19,26 +19,26 @@ class RateLimitServiceTest extends TestCase
     {
         parent::setUp();
         
-        // Mock del AppConfig
+        // Mock the AppConfig
         $this->mockConfig = Mockery::mock(AppConfig::class);
         $this->mockConfig->shouldReceive('get')
             ->with('rate_limit.database_path')
-            ->andReturn(':memory:'); // Base de datos en memoria para tests
+            ->andReturn(':memory:'); // In-memory database for tests
         $this->mockConfig->shouldReceive('get')
             ->with('rate_limit.time_window')
             ->andReturn(3600); // 1 hora
         $this->mockConfig->shouldReceive('get')
             ->with('rate_limit.max_requests')
-            ->andReturn(100); // 100 requests por hora
+            ->andReturn(100); // 100 requests per hour
         
-        // Mock del Logger
+        // Mock the Logger
         $this->mockLogger = Mockery::mock(LoggerInterface::class);
         $this->mockLogger->shouldReceive('info')->byDefault();
         $this->mockLogger->shouldReceive('debug')->byDefault();
         $this->mockLogger->shouldReceive('warning')->byDefault();
         $this->mockLogger->shouldReceive('error')->byDefault();
         
-        // Mock del storage
+        // Mock the storage
         $mockStorage = Mockery::mock(RateLimitStorageInterface::class);
         $mockStorage->shouldReceive('getRequestCount')->byDefault()->andReturn(0);
         $mockStorage->shouldReceive('getRequestsCount')->byDefault()->andReturn(0);
@@ -48,7 +48,7 @@ class RateLimitServiceTest extends TestCase
         $mockStorage->shouldReceive('cleanupExpiredRequests')->byDefault();
         $mockStorage->shouldReceive('logRequest')->byDefault();
         
-        // Crear instancia del RateLimitService con dependencias mockeadas
+        // Create RateLimitService instance with mocked dependencies
         $this->rateLimitService = new RateLimitService($this->mockConfig, $this->mockLogger, $mockStorage);
     }
 
@@ -83,6 +83,6 @@ class RateLimitServiceTest extends TestCase
         
         // Act & Assert - should not throw exception
         $this->rateLimitService->enforceRateLimit($request);
-        $this->assertTrue(true); // Si llegamos aquí, no hubo excepción
+        $this->assertTrue(true); // If we get here, no exception was thrown
     }
 }

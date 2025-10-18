@@ -7,10 +7,10 @@ namespace ChatbotDemo\Tests\Integration;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test de integración para endpoint de health
+ * Integration test for health endpoint
  * 
- * Valida el flujo completo: Request -> Middleware -> Controller -> Response
- * usando la aplicación Slim en memoria.
+ * Validates that the endpoint works correctly
+ * using the in-memory Slim application.
  */
 class HealthEndpointTest extends IntegrationTestCase
 {
@@ -50,7 +50,7 @@ class HealthEndpointTest extends IntegrationTestCase
 
     public function testHealthEndpointWithPhpExtension(): void
     {
-        // Test que funciona tanto /health como /health.php
+        // Test that both /health and /health.php work
         $response = $this->get('/health.php');
         
         $this->assertEquals(200, $response->getStatusCode());
@@ -65,11 +65,11 @@ class HealthEndpointTest extends IntegrationTestCase
         $response = $this->get('/health');
         $data = $this->getJsonResponse($response);
         
-        // Verificar que los checks están incluidos
+        // Verify that checks are included
         $this->assertArrayHasKey('checks', $data);
         $checks = $data['checks'];
         
-        // Cada check debe tener status
+        // Each check must have status
         foreach ($checks as $checkName => $checkData) {
             $this->assertIsString($checkName);
             $this->assertIsArray($checkData);
@@ -80,7 +80,7 @@ class HealthEndpointTest extends IntegrationTestCase
 
     public function testHealthEndpointCorsHeaders(): void
     {
-        // Test que el middleware CORS está funcionando
+        // Test that CORS middleware is working
         $response = $this->get('/health');
         
         // Verify that we have basic CORS headers
@@ -89,13 +89,13 @@ class HealthEndpointTest extends IntegrationTestCase
 
     public function testHealthEndpointOptionsRequest(): void
     {
-        // Test preflight CORS request - Por ahora skip este test
+        // Test preflight CORS request - Skip this test for now
         $this->markTestSkipped('OPTIONS handling needs refinement for health endpoint');
     }
 
     public function testHealthEndpointResponseTime(): void
     {
-        // Test que el endpoint responde rápidamente
+        // Test that the endpoint responds quickly
         $startTime = microtime(true);
         
         $response = $this->get('/health');
@@ -110,8 +110,8 @@ class HealthEndpointTest extends IntegrationTestCase
 
     public function testHealthEndpointErrorHandling(): void
     {
-        // Test que el middleware de error handling está activo
-        // Intentamos un método no permitido
+        // Test that error handling middleware is active
+        // Try a method not allowed
         $request = $this->createRequest('PUT', '/health');
         $response = $this->runApp($request);
         

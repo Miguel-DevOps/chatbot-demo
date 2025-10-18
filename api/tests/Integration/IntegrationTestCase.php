@@ -10,6 +10,7 @@ use ChatbotDemo\Controllers\ChatController;
 use ChatbotDemo\Controllers\HealthController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
+use ChatbotDemo\Middleware\ValidationMiddleware;
 use ChatbotDemo\Services\ChatService;
 use ChatbotDemo\Services\GenerativeAiClientInterface;
 use ChatbotDemo\Services\KnowledgeBaseService;
@@ -31,9 +32,9 @@ use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Factory\UriFactory;
 
 /**
- * Clase base para tests de integración
+ * Base class for integration tests
  * 
- * Configura una aplicación Slim completa en memoria para testing,
+ * Configures a complete Slim application in memory for testing,
  * permitiendo validar el flujo completo sin servidor HTTP externo.
  */
 abstract class IntegrationTestCase extends TestCase
@@ -49,21 +50,21 @@ abstract class IntegrationTestCase extends TestCase
     {
         parent::setUp();
         
-        // Reset container para cada test
+        // Reset container for each test
         DependencyContainer::reset();
         
-        // Configurar factores para crear requests/responses
+        // Configure factories to create requests/responses
         $this->requestFactory = new RequestFactory();
         $this->streamFactory = new StreamFactory();
         $this->uriFactory = new UriFactory();
         
-        // Crear aplicación Slim en memoria
+        // Create Slim application in memory
         $this->setupApplication();
     }
 
     protected function tearDown(): void
     {
-        // Limpiar container después de cada test
+        // Clean up container after each test
         DependencyContainer::reset();
         
         parent::tearDown();
@@ -73,19 +74,20 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Configura la aplicación Slim con DI container personalizado para testing
+     * Configures the Slim application with custom DI container for testing
      */
     private function setupApplication(): void
     {
-        // Crear container con configuración de testing
+        // Create container with testing configuration
         $this->container = $this->buildTestContainer();
         
-        // Configurar Slim con el container
+        // Configure Slim with the container
         AppFactory::setContainer($this->container);
         $this->app = AppFactory::create();
 
-        // Configurar middleware stack (mismo orden que en producción)
+        // Configure middleware stack (same order as production)
         $this->app->addBodyParsingMiddleware();
+        $this->app->add(new ValidationMiddleware()); // Add validation middleware after body parsing
         $this->app->addRoutingMiddleware();
         
         // Middleware personalizado de manejo de errores
@@ -99,31 +101,31 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Construye un container DI específico para testing
+     * Builds a specific DI container for testing
      */
     private function buildTestContainer(): Container
     {
         $builder = new ContainerBuilder();
         
         $builder->addDefinitions([
-            // Configuración de testing
+            // Testing configuration
             AppConfig::class => function () {
                 return $this->createTestConfig();
             },
 
-            // Logger silencioso para testing
+            // Silent logger for testing
             LoggerInterface::class => function () {
                 $logger = new Logger('test');
                 $logger->pushHandler(new NullHandler()); // No output durante tests
                 return $logger;
             },
 
-            // TracerInterface para testing usando OpenTelemetry global
+            // TracerInterface for testing using global OpenTelemetry
             TracerInterface::class => function () {
                 return Globals::tracerProvider()->getTracer('chatbot-test', '1.0.0');
             },
 
-            // AI Client mock para testing
+            // AI Client mock for testing
             GenerativeAiClientInterface::class => function () {
                 return new class implements GenerativeAiClientInterface {
                     public function generateContent(string $prompt): string
@@ -143,7 +145,7 @@ abstract class IntegrationTestCase extends TestCase
                 };
             },
 
-            // Servicios - pueden ser sobrescritos en tests específicos
+            // Services - can be overridden in specific tests
             KnowledgeBaseService::class => function (AppConfig $config, LoggerInterface $logger) {
                 return $this->createKnowledgeBaseService($config, $logger);
             },
@@ -190,7 +192,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Configura las rutas de la aplicación
+     * Configures the application routes
      */
     private function setupRoutes(): void
     {
@@ -206,7 +208,7 @@ abstract class IntegrationTestCase extends TestCase
         $this->app->options('/health.php', [ChatController::class, 'options']);
         $this->app->options('/health', [ChatController::class, 'options']);
 
-        // Ruta raíz
+        // Root route
         $this->app->get('/', function (ServerRequestInterface $request, ResponseInterface $response) {
             $config = $this->container->get(AppConfig::class);
             
@@ -245,11 +247,11 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Crea configuración específica para testing
+     * Creates specific configuration for testing
      */
     protected function createTestConfig(): AppConfig
     {
-        // Configuración base para testing
+        // Base configuration for testing
         $testConfig = [
             'app' => [
                 'name' => 'Chatbot Demo API',
@@ -258,7 +260,7 @@ abstract class IntegrationTestCase extends TestCase
                 'debug' => true
             ],
             'gemini' => [
-                'api_key' => 'DEMO_MODE', // Por defecto en modo demo para tests
+                'api_key' => 'DEMO_MODE', // Default to demo mode for tests
                 'model' => 'gemini-pro',
                 'temperature' => 0.7,
                 'max_tokens' => 2048,
@@ -271,7 +273,7 @@ abstract class IntegrationTestCase extends TestCase
             ],
             'rate_limit' => [
                 'enabled' => true,
-                'max_requests' => 100, // Más permisivo en tests
+                'max_requests' => 100, // More permissive in tests
                 'time_window' => 900,
                 'database_path' => '/tmp/test_rate_limit.db'
             ],
@@ -286,7 +288,7 @@ abstract class IntegrationTestCase extends TestCase
             ]
         ];
 
-        // Permitir overrides de configuración para tests específicos
+        // Allow configuration overrides for specific tests
         if (isset($this->testConfigOverrides)) {
             $testConfig = $this->mergeConfigArrays($testConfig, $this->testConfigOverrides);
         }
@@ -295,7 +297,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Merge profundo de arrays de configuración que sobrescribe valores escalares
+     * Deep merge of configuration arrays that overwrites scalar values
      */
     private function mergeConfigArrays(array $base, array $overrides): array
     {
@@ -310,7 +312,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Permite establecer configuración personalizada para un test específico
+     * Allows setting custom configuration for a specific test
      */
     protected function setTestConfigOverrides(array $overrides): void
     {
@@ -318,21 +320,21 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Reconfigura la aplicación con nuevos overrides (útil para tests que necesitan cambiar configuración)
+     * Reconfigures the application with new overrides (useful for tests that need to change configuration)
      */
     protected function reconfigureApp(array $configOverrides): void
     {
         $this->testConfigOverrides = $configOverrides;
         
-        // Reset container con nueva configuración
+        // Reset container with new configuration
         DependencyContainer::reset();
         
-        // Reconfigurar aplicación
+        // Reconfigure application
         $this->setupApplication();
     }
 
     /**
-     * Factory methods para servicios - pueden ser sobrescritos en tests específicos
+     * Factory methods for services - can be overridden in specific tests
      */
     protected function createKnowledgeBaseService(AppConfig $config, LoggerInterface $logger): KnowledgeBaseService
     {
@@ -354,7 +356,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Helper para crear requests HTTP simulados
+     * Helper to create simulated HTTP requests
      */
     protected function createRequest(
         string $method,
@@ -374,7 +376,7 @@ abstract class IntegrationTestCase extends TestCase
             $request = $request->withBody($stream);
         }
         
-        // Agregar parámetros del servidor por defecto para testing
+        // Add default server parameters for testing
         $defaultServerParams = [
             'REMOTE_ADDR' => '127.0.0.1',
             'SERVER_NAME' => 'localhost',
@@ -383,7 +385,7 @@ abstract class IntegrationTestCase extends TestCase
         ];
         $finalServerParams = array_merge($defaultServerParams, $serverParams);
         
-        // Usar reflection para establecer serverParams ya que no hay método público
+        // Use reflection to set serverParams since there's no public method
         $reflection = new \ReflectionClass($request);
         $property = $reflection->getProperty('serverParams');
         $property->setAccessible(true);
@@ -393,7 +395,7 @@ abstract class IntegrationTestCase extends TestCase
     }
 
     /**
-     * Helper para ejecutar request contra la aplicación
+     * Helper to execute request against the application
      */
     protected function runApp(ServerRequestInterface $request): ResponseInterface
     {

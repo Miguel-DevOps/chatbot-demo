@@ -4,7 +4,7 @@ namespace ChatbotDemo\Tests\Integration;
 class ProjectTest extends IntegrationTestCase {
     
     public function testHealthEndpoint() {
-        // Usar helper get() en lugar de file_get_contents
+        // Use helper get() instead of file_get_contents
         $response = $this->get('/health.php?plain=1');
         
         $this->assertEquals(200, $response->getStatusCode(), 'No se pudo conectar a health.php');
@@ -14,7 +14,7 @@ class ProjectTest extends IntegrationTestCase {
     }
 
     public function testChatEndpoint() {
-        // Usar helper postJson() en lugar de file_get_contents
+        // Use helper postJson() instead of file_get_contents
         $response = $this->postJson('/chat.php', ['message' => 'Hola']);
         
         $this->assertEquals(200, $response->getStatusCode(), 'No se pudo conectar a chat.php');
@@ -37,7 +37,7 @@ class ProjectTest extends IntegrationTestCase {
         $knowledgeDir = $apiDir . '/knowledge';
         $this->assertDirectoryExists($knowledgeDir, 'El directorio de knowledge base no existe');
         
-        // Verificar que tiene al menos un archivo
+        // Verify that it has at least one file
         $files = glob($knowledgeDir . '/*.md');
         $this->assertNotEmpty($files, 'No hay archivos de conocimiento en el directorio');
     }

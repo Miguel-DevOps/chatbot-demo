@@ -30,7 +30,7 @@ class ChatControllerTest extends TestCase
     {
         parent::setUp();
         
-        // Mock de los servicios
+        // Mock the services
         $this->mockChatService = Mockery::mock(ChatService::class);
         $this->mockRateLimitService = Mockery::mock(RateLimitService::class);
         $this->mockConfig = Mockery::mock(AppConfig::class);
@@ -50,7 +50,7 @@ class ChatControllerTest extends TestCase
         // Use a real tracer for the tests to avoid complex mocking
         $this->mockTracer = Globals::tracerProvider()->getTracer('test', '1.0.0');
         
-        // Crear instancia del ChatController con dependencias mockeadas
+        // Create ChatController instance with mocked dependencies
         $this->chatController = new ChatController(
             $this->mockChatService,
             $this->mockRateLimitService,
@@ -111,14 +111,14 @@ class ChatControllerTest extends TestCase
             'retry_after' => 0
         ];
 
-        // Mock del rate limit service
+        // Mock the rate limit service
         $this->mockRateLimitService
             ->shouldReceive('checkRateLimit')
             ->with($request)
             ->once()
             ->andReturn($rateLimitResult);
 
-        // Mock del chat service
+        // Mock the chat service
         $this->mockChatService
             ->shouldReceive('processMessage')
             ->with($message, null, Mockery::any())

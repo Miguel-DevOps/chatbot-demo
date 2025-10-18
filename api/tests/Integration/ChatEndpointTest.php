@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
 use OpenTelemetry\API\Trace\TracerInterface;
 
 /**
- * Test de integración para endpoint de chat
+ * Integration test for chat endpoint
  * 
  * Valida el flujo completo mientras mockea selectivamente dependencias externas.
  * Testing completo: Request -> Middleware -> Controller -> Service -> Response
@@ -27,7 +27,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     protected function setUp(): void
     {
-        // Crear mock del ChatService antes de setup
+        // Create ChatService mock before setup
         $this->mockChatService = $this->createMock(ChatService::class);
         
         parent::setUp();
@@ -82,7 +82,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointWithPhpExtension(): void
     {
-        // Test que funciona tanto /chat como /chat.php
+        // Test that both /chat and /chat.php work
         $this->mockChatService
             ->expects($this->once())
             ->method('processMessage')
@@ -107,7 +107,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointInvalidJsonRequest(): void
     {
-        // Test manejo de JSON inválido por middleware
+        // Test invalid JSON handling by middleware
         $request = $this->createRequest(
             'POST',
             '/chat',
@@ -117,7 +117,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
         $response = $this->runApp($request);
 
-        // Error handling middleware debe manejar esto
+        // Error handling middleware should handle this
         $this->assertEquals(400, $response->getStatusCode());
         
         $data = $this->getJsonResponse($response);
@@ -126,7 +126,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointMissingMessage(): void
     {
-        // Test validación de parámetros requeridos
+        // Test required parameters validation
         $response = $this->postJson('/chat', [
             'conversation_id' => null
             // Falta 'message'
@@ -141,7 +141,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointEmptyMessage(): void
     {
-        // Test validación de mensaje vacío
+        // Test empty message validation
         $response = $this->postJson('/chat', [
             'message' => '',
             'conversation_id' => null
@@ -155,7 +155,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointInvalidMessageType(): void
     {
-        // Test validación de tipo de mensaje
+        // Test message type validation
         $response = $this->postJson('/chat', [
             'message' => 123, // No es string
             'conversation_id' => null
@@ -169,7 +169,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointServiceException(): void
     {
-        // Test manejo de excepciones del servicio
+        // Test service exception handling
         $this->mockChatService
             ->expects($this->once())
             ->method('processMessage')
@@ -185,7 +185,7 @@ class ChatEndpointTest extends IntegrationTestCase
             'conversation_id' => null
         ]);
 
-        // Error handling middleware debe capturar y formatear
+        // Error handling middleware should capture and format
         $this->assertEquals(500, $response->getStatusCode());
         
         $data = $this->getJsonResponse($response);
@@ -213,7 +213,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointOptionsRequest(): void
     {
-        // Test preflight CORS para POST requests
+        // Test preflight CORS for POST requests
         $request = $this->createRequest(
             'OPTIONS',
             '/chat',
@@ -234,7 +234,7 @@ class ChatEndpointTest extends IntegrationTestCase
 
     public function testChatEndpointConversationContext(): void
     {
-        // Test que se pasa correctamente el contexto de conversación
+        // Test that conversation context is passed correctly
         $conversationId = 'conv-123-456';
         
         $this->mockChatService
@@ -263,14 +263,14 @@ class ChatEndpointTest extends IntegrationTestCase
     {
         $this->markTestSkipped('Rate limiting integration test needs configuration review');
         
-        // Usar servicio real para este test
+        // Use real service for this test
         $this->useRealChatService = true;
         
         // Cleanup cualquier DB previa
         @unlink('/tmp/test_rate_limit_integration.db');
         
-        // Test que el rate limiting está integrado (usando servicio real)
-        // Reconfigurar con límite muy bajo para testing
+        // Test that rate limiting is integrated (using real service)
+        // Reconfigure with very low limit for testing
         $this->reconfigureApp([
             'rate_limit' => [
                 'enabled' => true,
@@ -280,9 +280,9 @@ class ChatEndpointTest extends IntegrationTestCase
             ]
         ]);
         
-        // No configurar mocks - usar servicios reales para este test
+        // Don't configure mocks - use real services for this test
 
-        // Primera request debe funcionar
+        // First request should work
         $response1 = $this->postJson('/chat', [
             'message' => 'First message',
             'conversation_id' => null
@@ -308,7 +308,7 @@ class ChatEndpointTest extends IntegrationTestCase
         
         $data = $this->getJsonResponse($response2);
         $this->assertArrayHasKey('error', $data);
-        $this->assertStringContainsString('límite', strtolower($data['error'])); // Texto en español
+        $this->assertStringContainsString('límite', strtolower($data['error'])); // Spanish text
         
         // Cleanup
         @unlink('/tmp/test_rate_limit_integration.db');

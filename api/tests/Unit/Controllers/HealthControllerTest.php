@@ -25,12 +25,12 @@ class HealthControllerTest extends TestCase
     {
         parent::setUp();
         
-        // Mock de configuración y logger
+        // Mock configuration and logger
         $this->mockConfig = Mockery::mock(AppConfig::class);
         $this->mockLogger = Mockery::mock(LoggerInterface::class);
         $this->mockRateLimitService = Mockery::mock(RateLimitService::class);
         
-        // Crear instancia del HealthController con dependencias mockeadas
+        // Create HealthController instance with mocked dependencies
         $this->healthController = new HealthController($this->mockConfig, $this->mockLogger, $this->mockRateLimitService);
     }
 

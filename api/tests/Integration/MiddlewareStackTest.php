@@ -5,30 +5,30 @@ declare(strict_types=1);
 namespace ChatbotDemo\Tests\Integration;
 
 /**
- * Test de integración para la cadena completa de middleware
+ * Integration test for the complete middleware chain
  * 
- * Valida que todos los middlewares están funcionando correctamente
- * en el orden correcto: Body Parsing -> Routing -> Error Handler -> CORS
+ * Validates that all middlewares are working correctly
+ * in the correct order: Body Parsing -> Routing -> Error Handler -> CORS
  */
 class MiddlewareStackTest extends IntegrationTestCase
 {
     public function testMiddlewareStackOrder(): void
     {
-        // Test que middleware stack está configurado correctamente
-        // Hacemos una request válida y verificamos que todos los middlewares procesan
+        // Test that middleware stack is configured correctly
+        // Make a valid request and verify that all middlewares process it
         
         $response = $this->get('/health');
         
-        // Si llegamos aquí con 200, toda la stack funcionó
+        // If we get here with 200, the entire stack worked
         $this->assertEquals(200, $response->getStatusCode());
         
-        // Verificar que CORS middleware funcionó
+        // Verify that CORS middleware worked
         $this->assertTrue($response->hasHeader('Access-Control-Allow-Origin'));
         
-        // Verificar que content parsing funcionó (JSON response)
+        // Verify that content parsing worked (JSON response)
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         
-        // Verificar que routing funcionó (respuesta estructurada)
+        // Verify that routing worked (structured response)
         $data = $this->getJsonResponse($response);
         $this->assertIsArray($data);
         $this->assertArrayHasKey('status', $data);
@@ -36,7 +36,7 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testBodyParsingMiddleware(): void
     {
-        // Test que el body parsing middleware funciona correctamente
+        // Test that body parsing middleware works correctly
         $requestData = [
             'message' => 'Test message for parsing',
             'conversation_id' => ['prev_msg1', 'prev_msg2']
@@ -44,17 +44,17 @@ class MiddlewareStackTest extends IntegrationTestCase
         
         $response = $this->postJson('/chat', $requestData);
         
-        // Si no hay error 400 de parsing, el middleware funcionó
+        // If there's no 400 parsing error, the middleware worked
         $this->assertNotEquals(400, $response->getStatusCode(), 'Body parsing should work correctly');
     }
 
     public function testRoutingMiddleware(): void
     {
-        // Test que el routing middleware identifica rutas correctamente
+        // Test that routing middleware identifies routes correctly
         $testRoutes = [
             ['/health', 'GET', 200],
             ['/health.php', 'GET', 200],
-            ['/chat', 'POST', 200], // Asumiendo que hay mock configurado
+            ['/chat', 'POST', 200], // Assuming there's a mock configured
             ['/chat.php', 'POST', 200],
             ['/non-existent', 'GET', 404],
         ];
@@ -76,7 +76,7 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testCorsMiddlewareSimpleRequest(): void
     {
-        // Test CORS middleware en request simple
+        // Test CORS middleware with simple request
         $request = $this->createRequest(
             'GET',
             '/health',
@@ -94,7 +94,7 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testCorsMiddlewarePreflightRequest(): void
     {
-        // Test CORS middleware en preflight request
+        // Test CORS middleware with preflight request
         $request = $this->createRequest(
             'OPTIONS',
             '/chat',
@@ -112,21 +112,21 @@ class MiddlewareStackTest extends IntegrationTestCase
         $this->assertTrue($response->hasHeader('Access-Control-Allow-Methods'));
         $this->assertTrue($response->hasHeader('Access-Control-Allow-Headers'));
         
-        // Verificar que métodos permitidos incluyen POST
+        // Verify that allowed methods include POST
         $allowedMethods = $response->getHeaderLine('Access-Control-Allow-Methods');
         $this->assertStringContainsString('POST', $allowedMethods);
         
-        // Verificar que headers permitidos incluyen Content-Type
+        // Verify that allowed headers include Content-Type
         $allowedHeaders = $response->getHeaderLine('Access-Control-Allow-Headers');
         $this->assertStringContainsString('Content-Type', $allowedHeaders);
     }
 
     public function testErrorHandlerMiddlewareIntegration(): void
     {
-        // Test que error handler middleware captura errores y los formatea
+        // Test that error handler middleware captures errors and formats them
         $response = $this->get('/this-route-does-not-exist');
         
-        // Error handler debe haber formateado la respuesta
+        // Error handler should have formatted the response
         $this->assertEquals(404, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         
@@ -137,7 +137,7 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testMiddlewareWithInvalidJson(): void
     {
-        // Test que el stack maneja JSON inválido correctamente
+        // Test that the stack handles invalid JSON correctly
         $request = $this->createRequest(
             'POST',
             '/chat',
@@ -147,7 +147,7 @@ class MiddlewareStackTest extends IntegrationTestCase
         
         $response = $this->runApp($request);
         
-        // Body parsing middleware debe detectar y error handler debe formatear
+        // Body parsing middleware should detect and error handler should format
         $this->assertEquals(400, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
         
@@ -157,21 +157,21 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testMiddlewareWithLargeRequest(): void
     {
-        // Test que el stack maneja requests grandes
+        // Test that the stack handles large requests
         $largeData = [
-            'message' => str_repeat('Large message content. ', 10) // Reducir mucho más para encontrar el límite
+            'message' => str_repeat('Large message content. ', 10) // Reduce much more to find the limit
         ];
         
         $response = $this->postJson('/chat', $largeData);
         
-        // Stack debe manejar sin crashes
+        // Stack should handle without crashes
         $this->assertNotEquals(500, $response->getStatusCode());
         $this->assertEquals('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     public function testMiddlewareHeaders(): void
     {
-        // Test que los headers se mantienen a través de toda la stack
+        // Test that headers are maintained throughout the entire stack
         $request = $this->createRequest(
             'GET',
             '/health',
@@ -186,22 +186,22 @@ class MiddlewareStackTest extends IntegrationTestCase
         
         $this->assertEquals(200, $response->getStatusCode());
         
-        // Verificar que response headers están presentes
+        // Verify that response headers are present
         $this->assertTrue($response->hasHeader('Content-Type'));
         $this->assertTrue($response->hasHeader('Access-Control-Allow-Origin'));
     }
 
     public function testMiddlewareErrorPropagation(): void
     {
-        // Test que errores se propagan correctamente através del stack
+        // Test that errors propagate correctly through the stack
         $scenarios = [
-            // JSON malformado - debe ser capturado por body parsing
+            // Malformed JSON - should be caught by body parsing
             ['POST', '/chat', '{"bad": json', 400],
             
-            // Ruta inexistente - debe ser capturado por routing
+            // Non-existent route - should be caught by routing
             ['GET', '/nonexistent', '', 404],
             
-            // Método no permitido - debe ser manejado por routing
+            // Method not allowed - should be handled by routing
             ['PUT', '/health', '', 404],
         ];
         
@@ -221,7 +221,7 @@ class MiddlewareStackTest extends IntegrationTestCase
 
     public function testMiddlewarePerformance(): void
     {
-        // Test que la stack de middleware no introduce latencia significativa
+        // Test that the middleware stack doesn't introduce significant latency
         $startTime = microtime(true);
         
         $response = $this->get('/health');

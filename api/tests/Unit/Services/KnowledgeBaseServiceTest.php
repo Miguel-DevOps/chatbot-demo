@@ -17,11 +17,11 @@ class KnowledgeBaseServiceTest extends TestCase
     {
         parent::setUp();
         
-        // Crear directorio temporal para tests PRIMERO
+        // Create temporary directory for tests FIRST
         $this->testKnowledgeDir = sys_get_temp_dir() . '/kb_test_' . uniqid();
         mkdir($this->testKnowledgeDir, 0777, true);
         
-        // Mock de configuración
+        // Mock configuration
         $mockConfig = Mockery::mock(AppConfig::class);
         $mockConfig->shouldReceive('get')
             ->with('knowledge.path')
@@ -36,14 +36,14 @@ class KnowledgeBaseServiceTest extends TestCase
             ->with('knowledge_base.cache_ttl', 3600)
             ->andReturn(3600);
         
-        // Mock del logger
+        // Mock the logger
         $mockLogger = Mockery::mock(LoggerInterface::class);
         $mockLogger->shouldReceive('info')->byDefault();
         $mockLogger->shouldReceive('debug')->byDefault();
         $mockLogger->shouldReceive('warning')->byDefault();
         $mockLogger->shouldReceive('error')->byDefault();
         
-        // Mock del knowledge provider
+        // Mock the knowledge provider
         $mockKnowledgeProvider = Mockery::mock(KnowledgeProviderInterface::class);
         $mockKnowledgeProvider->shouldReceive('loadKnowledge')
             ->byDefault()
@@ -52,7 +52,7 @@ class KnowledgeBaseServiceTest extends TestCase
             ->byDefault()
             ->andReturn("# Servicios\nOfrecemos consultoría estratégica y desarrollo de software.\n\n# Precios\nNuestros precios son competitivos en el mercado.");
         
-        // Crear archivos de conocimiento de prueba
+        // Create test knowledge files
         file_put_contents(
             $this->testKnowledgeDir . '/servicios.md',
             "# Servicios\nOfrecemos consultoría estratégica y desarrollo de software."
@@ -116,6 +116,6 @@ class KnowledgeBaseServiceTest extends TestCase
     {
         // Act & Assert - should not throw exception
         $this->knowledgeBaseService->invalidateCache();
-        $this->assertTrue(true); // Si llegamos aquí, no hubo excepción
+        $this->assertTrue(true); // If we get here, no exception was thrown
     }
 }

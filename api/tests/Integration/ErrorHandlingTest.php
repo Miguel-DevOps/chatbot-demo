@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ChatbotDemo\Tests\Integration;
 
 /**
- * Test de integración para middleware de manejo de errores
+ * Integration test for error handling middleware
  * 
  * Valida que el ErrorHandlerMiddleware funciona correctamente
  * en diferentes escenarios de error.
@@ -14,7 +14,7 @@ class ErrorHandlingTest extends IntegrationTestCase
 {
     public function testNotFoundEndpoint(): void
     {
-        // Test ruta que no existe
+        // Test route that doesn't exist
         $response = $this->get('/non-existent-endpoint');
         
         $this->assertEquals(404, $response->getStatusCode());
@@ -29,7 +29,7 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testMethodNotAllowed(): void
     {
-        // Test método no permitido en endpoint existente
+        // Test method not allowed on existing endpoint
         $request = $this->createRequest('PUT', '/health');
         $response = $this->runApp($request);
         
@@ -42,7 +42,7 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testInvalidContentType(): void
     {
-        // Test content type no válido para endpoint JSON
+        // Test invalid content type for JSON endpoint
         $request = $this->createRequest(
             'POST',
             '/chat',
@@ -97,12 +97,12 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testErrorResponseStructure(): void
     {
-        // Test estructura consistente de respuestas de error
+        // Test consistent structure of error responses
         $response = $this->get('/non-existent');
         
         $data = $this->getJsonResponse($response);
         
-        // Verificar estructura estándar de error
+        // Verify standard error structure
         $this->assertArrayHasKey('error', $data);
         $this->assertIsString($data['error']);
         
@@ -121,19 +121,19 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testErrorLogging(): void
     {
-        // Test que los errores son loggeados (indirectamente)
-        // Como usamos NullHandler en tests, verificamos que no hay excepciones
+        // Test that errors are logged (indirectly)
+        // Since we use NullHandler in tests, we verify there are no exceptions
         
         $response = $this->get('/non-existent');
         
-        // Si llega aquí sin excepción, el logging está funcionando
+        // If it gets here without exception, logging is working
         $this->assertEquals(404, $response->getStatusCode());
         $this->assertTrue(true, 'Error logging completed without exceptions');
     }
 
     public function testCorsOnErrorResponses(): void
     {
-        // Test que CORS headers están presentes incluso en respuestas de error
+        // Test that CORS headers are present even in error responses
         $response = $this->get('/non-existent');
         
         $this->assertEquals(404, $response->getStatusCode());
@@ -142,7 +142,7 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testErrorResponseContentType(): void
     {
-        // Test que todas las respuestas de error son JSON
+        // Test that all error responses are JSON
         $testCases = [
             '/non-existent',
             '/another/non-existent/path'
@@ -156,7 +156,7 @@ class ErrorHandlingTest extends IntegrationTestCase
 
     public function testMultipleErrorScenarios(): void
     {
-        // Test múltiples tipos de error en secuencia
+        // Test multiple error types in sequence
         $scenarios = [
             ['GET', '/not-found', 404],
             ['POST', '/health', 404], // POST no permitido en health

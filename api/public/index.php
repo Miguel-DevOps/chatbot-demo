@@ -10,6 +10,7 @@ use ChatbotDemo\Controllers\MetricsController;
 use ChatbotDemo\Middleware\CorsMiddleware;
 use ChatbotDemo\Middleware\ErrorHandlerMiddleware;
 use ChatbotDemo\Middleware\MetricsMiddleware;
+use ChatbotDemo\Middleware\ValidationMiddleware;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
@@ -52,6 +53,7 @@ try {
 
     // Configure middleware stack (order matters - last added runs first)
     $app->addBodyParsingMiddleware();
+    $app->add(new ValidationMiddleware()); // Add validation middleware after body parsing
     $app->addRoutingMiddleware();
     
     // Add our custom error handler middleware
