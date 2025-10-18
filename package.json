@@ -18,11 +18,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     
-    "api:test": "docker-compose --profile test run --rm api vendor/bin/phpunit",
-    "api:test:unit": "docker-compose --profile test run --rm api vendor/bin/phpunit tests/Unit",
-    "api:test:integration": "docker-compose --profile test run --rm api vendor/bin/phpunit tests/Integration",
+    "api:test": "docker compose --profile test run --rm api vendor/bin/phpunit",
+    "api:test:unit": "docker compose --profile test run --rm api vendor/bin/phpunit tests/Unit",
+    "api:test:integration": "docker compose --profile test run --rm api vendor/bin/phpunit tests/Integration",
     
-    "security:php": "docker-compose --profile test run --rm api composer audit",
+    "security:php": "docker compose --profile test run --rm api composer audit",
     "security:js": "pnpm audit --audit-level=critical",
 
     "ci:test:all": "pnpm test && pnpm api:test",

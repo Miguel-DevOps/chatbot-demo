@@ -75,10 +75,10 @@ jobs:
       - name: Build and Run Backend Tests
         run: |
           # Use 'test' profile to build the API container
-          docker-compose --profile test build
+          docker compose --profile test build
           # Run tests using the npm script
           pnpm api:test
           
       - name: Cleanup Docker
         if: always()
-        run: docker-compose --profile test down -v
+        run: docker compose --profile test down -v

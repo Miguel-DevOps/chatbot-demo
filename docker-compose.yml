@@ -29,7 +29,7 @@ services:
       - chatbot-network
     depends_on:
       - redis
-    # Profile "test" so it doesn't start with a simple "docker-compose up"
+    # Profile "test" so it doesn't start with a simple "docker compose up"
     profiles:
       - test
 
