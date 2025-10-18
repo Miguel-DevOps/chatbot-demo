@@ -17,29 +17,23 @@
     "lint": "eslint . && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    
     "compose:dev": "docker compose -f docker-compose.base.yml -f docker-compose.dev.yml",
     "compose:test": "docker compose -f docker-compose.base.yml -f docker-compose.test.yml",
     "compose:prod": "docker compose -f docker-compose.base.yml -f docker-compose.prod.yml",
-
     "dev:up": "pnpm compose:dev up -d --build",
     "dev:down": "pnpm compose:dev down -v",
     "dev:logs": "pnpm compose:dev logs -f",
     "dev:restart": "pnpm compose:dev restart",
-
     "api:test": "pnpm compose:test run --rm api vendor/bin/phpunit",
     "api:test:unit": "pnpm compose:test run --rm api vendor/bin/phpunit tests/Unit",
     "api:test:integration": "pnpm compose:test run --rm api vendor/bin/phpunit tests/Integration",
-    
     "api:test:ci": "cd api && vendor/bin/phpunit --testdox",
     "api:test:ci:unit": "cd api && vendor/bin/phpunit tests/Unit --testdox",
     "api:test:ci:integration": "cd api && vendor/bin/phpunit tests/Integration --testdox",
     "api:test:ci:coverage": "cd api && vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml",
-    
     "security:php": "pnpm compose:test run --rm api composer audit",
     "security:php:ci": "cd api && composer audit",
     "security:js": "pnpm audit --audit-level=critical",
-
     "ci:install:php": "cd api && composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader",
     "ci:setup:php": "cd api && mkdir -p storage/logs logs data && touch storage/logs/app.log && chmod -R 755 storage logs data",
     "ci:test:frontend": "vitest run --reporter=verbose",
@@ -49,7 +43,6 @@
     "ci:quality": "pnpm lint && pnpm ci:security",
     "ci:build": "pnpm generate-types && vite build",
     "ci:verify": "pnpm ci:quality && pnpm ci:test:all && pnpm ci:build",
-
     "generate-types": "openapi-typescript openapi.yml --output src/types/api.generated.ts"
   },
   "dependencies": {
@@ -101,12 +94,25 @@
     "globals": "^16.4.0",
     "husky": "^9.1.7",
     "jsdom": "^27.0.0",
+    "lint-staged": "^16.2.4",
     "openapi-typescript": "^7.9.1",
     "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0",
     "vite": "^7.1.9",
     "vitest": "^3.2.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{ts,tsx,js,jsx,json,css,md}": [
+      "prettier --write"
+    ],
+    "api/**/*.php": [
+      "php -l"
+    ]
   }
 }

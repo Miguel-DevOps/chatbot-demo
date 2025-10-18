@@ -1,1 +1,7 @@
+#!/usr/bin/env sh
+
+# Only run lint-staged on staged files for faster commits
+npx lint-staged
+
+# Run tests to ensure functionality
 pnpm test
