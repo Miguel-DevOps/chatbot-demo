@@ -2,7 +2,7 @@
   "name": "chatbot-demo",
   "version": "1.0.0",
   "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
-  "description": "Chatbot moderno compatible con PHP y React, portable y fácil de integrar en cualquier entorno.",
+  "description": "Modern chatbot compatible with PHP and React, portable and easy to integrate into any environment.",
   "author": "Miguel-DevOps",
   "license": "MIT",
   "repository": {
@@ -13,19 +13,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "build:production": "pnpm run security-check && pnpm run generate-types && pnpm run build && pnpm run copy-api",
-    "copy-api": "cp -r api dist/ || xcopy api dist\\api\\ /E /I",
-    "generate-types": "openapi-typescript openapi.yml --output src/types/api.generated.ts",
-    "validate-contracts": "bash scripts/validate-api-contracts.sh",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "preview": "vite preview",
-    "security-check": "pnpm audit --audit-level=moderate",
-    "security-fix": "pnpm audit fix",
-    "test": "vitest",
-    "prepare": "husky"
+    "build": "pnpm generate-types && vite build",
+    "lint": "eslint . && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    
+    "api:test": "docker-compose --profile test run --rm api vendor/bin/phpunit",
+    "api:test:unit": "docker-compose --profile test run --rm api vendor/bin/phpunit tests/Unit",
+    "api:test:integration": "docker-compose --profile test run --rm api vendor/bin/phpunit tests/Integration",
+    
+    "security:php": "docker-compose --profile test run --rm api composer audit",
+    "security:js": "pnpm audit --audit-level=critical",
+
+    "ci:test:all": "pnpm test && pnpm api:test",
+    "ci:security": "pnpm security:js && pnpm security:php",
+
+    "generate-types": "openapi-typescript openapi.yml --output src/types/api.generated.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
