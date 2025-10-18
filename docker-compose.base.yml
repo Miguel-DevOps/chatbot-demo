@@ -1,0 +1,58 @@
+# Canonical definitions of services. Default insurance.
+
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./api/public:/var/www/html/public:ro
+    networks:
+      - chatbot-network
+    depends_on:
+      api:
+        condition: service_healthy # Wait for API to be healthy
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: production # The default target is production
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - REDIS_HOST=redis
+      - OTEL_TRACES_ENABLED=${OTEL_TRACES_ENABLED:-true}
+    expose:
+      - "9000" # Expose port only to Docker internal network
+    networks:
+      - chatbot-network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "php", "/usr/local/bin/healthcheck.php"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  redis-data:
+
+networks:
+  chatbot-network:
+    driver: bridge

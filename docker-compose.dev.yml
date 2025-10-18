@@ -1,0 +1,20 @@
+# Override for the development environment.
+
+services:
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"
+
+  api:
+    # Use production stage that has PHP-FPM but mount code for development
+    volumes:
+      - ./api:/var/www/html # Mount source code for hot-reloading
+    environment:
+      - APP_ENV=development
+      - LOG_LEVEL=debug
+      - OTEL_TRACES_ENABLED=false
+
+  redis:
+    ports:
+      - "6379:6379" # Expose Redis to host for debugging

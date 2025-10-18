@@ -1,9 +1,7 @@
+# Override for production. Adds security and optimizations.
+
 services:
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-      target: production # Use final and optimized Dockerfile stage
     volumes: # NO source code volumes in production
       - api-logs:/var/www/html/logs
       - api-storage:/var/www/html/storage

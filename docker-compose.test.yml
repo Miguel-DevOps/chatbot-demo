@@ -1,0 +1,11 @@
+# Override to run the test suite.
+
+services:
+  api:
+    build:
+      target: dependencies # Ensure that Composer and PHPUnit are available
+    volumes:
+      - ./api:/var/www/html # Mount all code for tests
+    environment:
+      - APP_ENV=testing
+      - LOG_LEVEL=debug
