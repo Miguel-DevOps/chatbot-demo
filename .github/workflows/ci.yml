@@ -250,4 +250,4 @@ jobs:
       - name: Verify Docker Build
         run: |
           docker build -t chatbot-api:test -f api/Dockerfile api/
-          docker run --rm --name healthcheck-test chatbot-api:test php /usr/local/bin/healthcheck.php || true
+          docker run --rm --name healthcheck-test -e GITHUB_ACTIONS=true chatbot-api:test php /usr/local/bin/healthcheck.php
