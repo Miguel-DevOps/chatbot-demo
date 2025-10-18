@@ -19,14 +19,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 8
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v4
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -73,74 +75,74 @@ jobs:
     - name: Start containers for testing
       run: |
         # Start the API and Redis containers for testing using test-specific compose
-        docker-compose -f docker-compose.test.yml up -d api redis
+        docker compose -f docker-compose.test.yml up -d api redis
         
         # Wait for containers to be ready
         echo "Waiting for containers to be ready..."
-        timeout 60 bash -c 'until docker-compose -f docker-compose.test.yml exec -T api php --version; do sleep 2; done'
-        timeout 60 bash -c 'until docker-compose -f docker-compose.test.yml exec -T redis redis-cli ping; do sleep 2; done'
+        timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T api php --version; do sleep 2; done'
+        timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T redis redis-cli ping; do sleep 2; done'
         
         echo "✅ Containers are ready"
     
     - name: Verify container environment
       run: |
         echo "🔍 Verifying container environment matches production..."
-        docker-compose -f docker-compose.test.yml exec -T api php --version
-        docker-compose -f docker-compose.test.yml exec -T api php -m | head -10
-        docker-compose -f docker-compose.test.yml exec -T api composer --version
+        docker compose -f docker-compose.test.yml exec -T api php --version
+        docker compose -f docker-compose.test.yml exec -T api php -m | head -10
+        docker compose -f docker-compose.test.yml exec -T api composer --version
         echo "✅ Container environment verified"
     
     - name: Install dependencies in container
       run: |
         echo "📦 Installing dependencies in container..."
-        docker-compose -f docker-compose.test.yml exec -T api composer install --dev --prefer-dist --no-progress --no-interaction
+        docker compose -f docker-compose.test.yml exec -T api composer install --dev --prefer-dist --no-progress --no-interaction
         echo "✅ Dependencies installed"
     
     - name: Validate composer.json and composer.lock in container
       run: |
         echo "🔍 Validating Composer configuration..."
-        docker-compose -f docker-compose.test.yml exec -T api composer validate --strict
+        docker compose -f docker-compose.test.yml exec -T api composer validate --strict
         echo "✅ Composer validation passed"
     
     - name: Setup test environment in container
       run: |
         echo "🔧 Setting up test environment..."
-        docker-compose -f docker-compose.test.yml exec -T api mkdir -p tests/results
-        docker-compose -f docker-compose.test.yml exec -T api mkdir -p storage/logs
-        docker-compose -f docker-compose.test.yml exec -T api chmod -R 777 storage/logs
+        docker compose -f docker-compose.test.yml exec -T api mkdir -p tests/results
+        docker compose -f docker-compose.test.yml exec -T api mkdir -p storage/logs
+        docker compose -f docker-compose.test.yml exec -T api chmod -R 777 storage/logs
         echo "✅ Test environment ready"
     
     - name: Run PHP CS Fixer (dry-run) in container
       run: |
         echo "🔍 Running PHP CS Fixer..."
-        docker-compose -f docker-compose.test.yml exec -T api composer exec -- php-cs-fixer fix --dry-run --diff || true
+        docker compose -f docker-compose.test.yml exec -T api composer exec -- php-cs-fixer fix --dry-run --diff || true
         echo "✅ PHP CS Fixer check completed"
       continue-on-error: true
     
     - name: Run PHPStan in container
       run: |
         echo "🔍 Running PHPStan analysis..."
-        docker-compose -f docker-compose.test.yml exec -T api composer exec -- phpstan analyse --error-format=github || true
+        docker compose -f docker-compose.test.yml exec -T api composer exec -- phpstan analyse --error-format=github || true
         echo "✅ PHPStan analysis completed"
       continue-on-error: true
     
     - name: Run Unit Tests in container
       run: |
         echo "🧪 Running Unit Tests in container..."
-        docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Unit/ --coverage-clover=coverage.xml --log-junit=tests/results/junit.xml
+        docker compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Unit/ --coverage-clover=coverage.xml --log-junit=tests/results/junit.xml
         echo "✅ Unit tests completed"
     
     - name: Run Integration Tests in container
       run: |
         echo "🧪 Running Integration Tests in container..."
-        docker-compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Integration/ --log-junit=tests/results/integration-junit.xml
+        docker compose -f docker-compose.test.yml exec -T api ./vendor/bin/phpunit tests/Integration/ --log-junit=tests/results/integration-junit.xml
         echo "✅ Integration tests completed"
     
     - name: Copy test results from container
       run: |
         echo "📋 Copying test results from container..."
-        docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/tests/results/ ./api/tests/results/
-        docker cp $(docker-compose -f docker-compose.test.yml ps -q api):/var/www/html/coverage.xml ./api/coverage.xml || echo "Coverage file not found"
+        docker cp $(docker compose -f docker-compose.test.yml ps -q api):/var/www/html/tests/results/ ./api/tests/results/
+        docker cp $(docker compose -f docker-compose.test.yml ps -q api):/var/www/html/coverage.xml ./api/coverage.xml || echo "Coverage file not found"
         echo "✅ Test results copied"
     
     - name: Upload test results
@@ -165,14 +167,14 @@ jobs:
       if: failure()
       run: |
         echo "🔍 Container logs for debugging..."
-        docker-compose -f docker-compose.test.yml logs api
-        docker-compose -f docker-compose.test.yml logs redis
+        docker compose -f docker-compose.test.yml logs api
+        docker compose -f docker-compose.test.yml logs redis
     
     - name: Cleanup containers
       if: always()
       run: |
         echo "🧹 Cleaning up containers..."
-        docker-compose -f docker-compose.test.yml down -v
+        docker compose -f docker-compose.test.yml down -v
         echo "✅ Cleanup completed"
 
   # ===========================================
@@ -209,6 +211,8 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
+      with:
+        version: 8
     
     - name: Install frontend dependencies for audit
       run: pnpm install --frozen-lockfile
@@ -333,6 +337,8 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
+      with:
+        version: 8
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
