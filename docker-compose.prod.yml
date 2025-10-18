@@ -1,82 +1,34 @@
 services:
-  # Nginx as reverse proxy
-  nginx:
-    image: nginx:1.25-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./api/public:/var/www/html/public:ro
-    depends_on:
-      - api
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-
-  # PHP-FPM API service
   api:
     build:
       context: ./api
       dockerfile: Dockerfile
-      target: production
-    user: "1000:1000"  # Explicit non-root user (www:www)
+      target: production # Usa la etapa final y optimizada del Dockerfile
+    volumes: # SIN volumes de código fuente en producción
+      - api-logs:/var/www/html/logs
+      - api-storage:/var/www/html/storage
     environment:
       - APP_ENV=production
       - LOG_LEVEL=info
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=
-      - REDIS_DATABASE=0
-      # OpenTelemetry configuration
-      - OTEL_SERVICE_NAME=chatbot-demo-api
-      - OTEL_SERVICE_VERSION=1.0.0
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
       - OTEL_TRACES_ENABLED=true
-      - OTEL_METRICS_ENABLED=true
-      - OTEL_LOGS_ENABLED=true
-    volumes:
-      - api-logs:/var/www/html/logs
-      - api-storage:/var/www/html/storage
-    depends_on:
-      - redis
-    networks:
-      - chatbot-network
+    ports: [] # No exponer puertos directamente, Nginx es el proxy
     restart: unless-stopped
-    # Security hardening
     security_opt:
       - no-new-privileges:true
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=100m
-      - /var/tmp:noexec,nosuid,size=50m
     cap_drop:
       - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
     deploy:
       resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
+        limits: { memory: 512M, cpus: '1.0' }
+        reservations: { memory: 256M, cpus: '0.5' }
 
-  # Redis cache service
   redis:
-    image: redis:7-alpine
-    user: "999:999"  # Redis user
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --protected-mode no
-    volumes:
-      - redis-data:/data
-    networks:
-      - chatbot-network
+    ports: [] # No exponer Redis al exterior en producción
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
-    # Security hardening
     security_opt:
       - no-new-privileges:true
     read_only: true
@@ -84,184 +36,7 @@ services:
       - /tmp:noexec,nosuid,size=10m
     cap_drop:
       - ALL
-    cap_add:
-      - SETGID
-      - SETUID
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
-
-  # Optional: Redis monitoring
-  redis-exporter:
-    image: oliver006/redis_exporter:latest
-    environment:
-      - REDIS_ADDR=redis:6379
-    ports:
-      - "9121:9121"
-    depends_on:
-      - redis
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["monitoring"]
-
-  # Jaeger tracing backend
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    ports:
-      - "16686:16686"  # Jaeger UI
-      - "14250:14250"  # gRPC receiver
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-      - COLLECTOR_OTLP_GRPC_PORT=4317
-      - COLLECTOR_OTLP_HTTP_PORT=4318
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["observability"]
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '0.5'
-        reservations:
-          memory: 256M
-          cpus: '0.25'
-
-  # OpenTelemetry Collector
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    command: ["--config=/etc/otelcol-contrib/otel-collector.yml"]
-    volumes:
-      - ./observability/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml:ro
-    ports:
-      - "4317:4317"   # OTLP gRPC receiver
-      - "4318:4318"   # OTLP HTTP receiver
-      - "8888:8888"   # Prometheus metrics
-      - "8889:8889"   # Prometheus exporter metrics
-    depends_on:
-      - jaeger
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["observability"]
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
-
-  # Prometheus metrics storage and alerting
-  prometheus:
-    image: prom/prometheus:latest
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=30d'
-      - '--web.enable-lifecycle'
-      - '--web.enable-admin-api'
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-      - prometheus-data:/prometheus
-    depends_on:
-      - api
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["monitoring"]
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '1.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
-
-  # Grafana dashboards and visualization
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_USERS_ALLOW_ORG_CREATION=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    depends_on:
-      - prometheus
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["monitoring"]
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-          cpus: '0.5'
-        reservations:
-          memory: 128M
-          cpus: '0.25'
-
-  # Node Exporter for system metrics
-  node-exporter:
-    image: prom/node-exporter:latest
-    ports:
-      - "9100:9100"
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    networks:
-      - chatbot-network
-    restart: unless-stopped
-    profiles: ["monitoring"]
-    deploy:
-      resources:
-        limits:
-          memory: 128M
-          cpus: '0.25'
-        reservations:
-          memory: 64M
-          cpus: '0.1'
 
 volumes:
-  redis-data:
-    driver: local
   api-logs:
-    driver: local
   api-storage:
-    driver: local
-  prometheus-data:
-    driver: local
-  grafana-data:
-    driver: local
-
-networks:
-  chatbot-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

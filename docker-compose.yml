@@ -1,5 +1,4 @@
 services:
-  # Nginx as reverse proxy (unified with production)
   nginx:
     image: nginx:1.25-alpine
     ports:
@@ -14,40 +13,30 @@ services:
     networks:
       - chatbot-network
 
-  # PHP-FPM API service
   api:
     build:
       context: ./api
       dockerfile: Dockerfile
-      target: production  # Use production target for consistency
-    environment:
-      - APP_ENV=development
-      - LOG_LEVEL=debug
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=
-      - REDIS_DATABASE=0
-      # OpenTelemetry configuration (disabled in development by default)
-      - OTEL_SERVICE_NAME=chatbot-demo-api-dev
-      - OTEL_SERVICE_VERSION=1.0.0-dev
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
-      - OTEL_TRACES_ENABLED=false
-      - OTEL_METRICS_ENABLED=false
-      - OTEL_LOGS_ENABLED=false
+      target: dependencies # Usar la etapa con dependencias de desarrollo para tests
     volumes:
-      - ./api:/var/www/html  # Mount source code for development
-      - api-logs:/var/www/html/logs
-      - api-storage:/var/www/html/storage
-    depends_on:
-      - redis
+      - ./api:/var/www/html
+    environment:
+      - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - REDIS_HOST=redis
+      - OTEL_TRACES_ENABLED=false # Deshabilitado para desarrollo y tests
     networks:
       - chatbot-network
+    depends_on:
+      - redis
+    # Perfil "tests" para que no se levante con un simple "docker-compose up"
+    profiles:
+      - test
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes --protected-mode no
     volumes:
       - redis-data:/data
     networks:
@@ -55,8 +44,6 @@ services:
 
 volumes:
   redis-data:
-  api-logs:  # Add volumes for unified development
-  api-storage:
 
 networks:
   chatbot-network:
