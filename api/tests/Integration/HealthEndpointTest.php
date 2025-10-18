@@ -118,4 +118,53 @@ class HealthEndpointTest extends IntegrationTestCase
         // Should be handled by error middleware, not a 500
         $this->assertNotEquals(500, $response->getStatusCode());
     }
+
+    // ==================================================================
+    // Project Structure Validation Tests (consolidated from ProjectTest)
+    // ==================================================================
+
+    public function testApiFilesExist(): void
+    {
+        $apiDir = dirname(__DIR__, 2);
+        $requiredFiles = [
+            'public/index.php',
+            'src/Controllers/ChatController.php',
+            'src/Controllers/HealthController.php',
+            'src/Config/AppConfig.php',
+            'src/Config/DependencyContainer.php'
+        ];
+        
+        foreach ($requiredFiles as $file) {
+            $this->assertFileExists($apiDir . '/' . $file, "Missing required file: $file");
+        }
+    }
+
+    public function testKnowledgeDirectoryExists(): void
+    {
+        $apiDir = dirname(__DIR__, 2);
+        $knowledgeDir = $apiDir . '/knowledge';
+        
+        $this->assertDirectoryExists($knowledgeDir, 'Knowledge base directory does not exist');
+        
+        // Verify that it has at least one markdown file
+        $files = glob($knowledgeDir . '/*.md');
+        $this->assertNotEmpty($files, 'No markdown knowledge files found in knowledge directory');
+        
+        // Verify files are readable
+        foreach ($files as $file) {
+            $this->assertIsReadable($file, "Knowledge file is not readable: " . basename($file));
+        }
+    }
+
+    public function testHealthEndpointPlainFormat(): void
+    {
+        // Test plain text format (consolidated from ChatTest and ProjectTest)
+        $response = $this->get('/health?plain=1');
+        
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('text/plain', $response->getHeaderLine('Content-Type'));
+        
+        $body = (string) $response->getBody();
+        $this->assertStringContainsString('OK', $body);
+    }
 }

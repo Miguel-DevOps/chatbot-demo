@@ -44,17 +44,8 @@ class FilesystemKnowledgeProvider implements KnowledgeProviderInterface
         $files = glob($knowledgePath . '/*.md');
         
         if (empty($files)) {
-            $this->logger->warning('No markdown files found, checking for legacy knowledge base');
-
-            // Fallback to legacy PHP file if no .md files found
-            $legacyFile = dirname($knowledgePath) . '/knowledge-base.php';
-            if (file_exists($legacyFile)) {
-                $this->logger->info('Loading legacy knowledge base file', ['file' => $legacyFile]);
-                return include $legacyFile;
-            }
-            
-            $this->logger->error('No knowledge base files found', ['path' => $knowledgePath]);
-            throw new RuntimeException("No knowledge base files found");
+            $this->logger->error('No markdown files found in knowledge base directory', ['path' => $knowledgePath]);
+            throw new RuntimeException("No knowledge base markdown files found in: {$knowledgePath}");
         }
 
         $this->logger->info('Loading knowledge base files', [
