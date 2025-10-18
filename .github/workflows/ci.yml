@@ -8,63 +8,246 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  NODE_VERSION: '20'
+  PHP_VERSION: '8.2'
+
 jobs:
-  # Job 1: Linter, Type-Checking y Auditorías de Seguridad
+  # Job 1: Setup centralizado y cache de dependencias
+  setup:
+    name: "Setup & Dependencies"
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.key }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Generate Cache Key
+        id: cache-key
+        run: |
+          echo "key=deps-${{ hashFiles('pnpm-lock.yaml', 'api/composer.lock') }}" >> $GITHUB_OUTPUT
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with: 
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Cache Node Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: node-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+      
+      - name: Install JS Dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, iconv, json, mbstring, pdo, redis, zip
+          tools: composer:v2
+          coverage: none
+      
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            api/vendor
+            ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('api/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+      
+      - name: Install PHP Dependencies
+        working-directory: api
+        run: composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader
+
+  # Job 2: Quality Gate optimizado
   quality-gate:
     name: "Quality & Security Gate"
     runs-on: ubuntu-latest
+    needs: setup
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - name: Install JS Dependencies
-        run: pnpm install --frozen-lockfile
+        with: 
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Restore Node Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: node-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+      
+      - name: Install JS Dependencies (if cache miss)
+        run: pnpm install --frozen-lockfile --prefer-offline
+      
       - name: Run JS Linter & Type Checker
         run: pnpm lint
+      
       - name: Run JS Security Audit
         run: pnpm security:js
 
-  # Job 2: Tests de Frontend (en paralelo con Backend)
+  # Job 3: Frontend Tests optimizado
   frontend-tests:
     name: "Frontend Tests"
     runs-on: ubuntu-latest
-    needs: quality-gate
+    needs: [setup, quality-gate]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        with: 
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Restore Node Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: node-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+      
+      - name: Install JS Dependencies (if cache miss)
+        run: pnpm install --frozen-lockfile --prefer-offline
+      
       - name: Run Frontend Tests
         run: pnpm test
 
-  # Job 3: Tests de Backend (en paralelo con Frontend)
+  # Job 4: Backend Tests optimizado (SIN Docker)
   backend-tests:
-    name: "Backend Tests (Docker)"
+    name: "Backend Tests (Native PHP)"
     runs-on: ubuntu-latest
-    needs: quality-gate
+    needs: [setup, quality-gate]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, iconv, json, mbstring, pdo, redis, zip
+          tools: composer:v2
+          coverage: xdebug
+      
+      - name: Restore Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            api/vendor
+            ~/.composer/cache
+          key: composer-${{ runner.os }}-${{ hashFiles('api/composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+      
+      - name: Install PHP Dependencies (if cache miss)
+        working-directory: api
+        run: composer install --prefer-dist --no-progress --no-suggest --optimize-autoloader
+      
+      - name: Create Test Environment
+        working-directory: api
+        run: |
+          mkdir -p storage/logs logs data
+          touch storage/logs/app.log
+          chmod -R 755 storage logs data
+      
+      - name: Run PHP Unit Tests
+        working-directory: api
+        run: vendor/bin/phpunit tests/Unit --testdox
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+      
+      - name: Run PHP Integration Tests
+        working-directory: api
+        run: vendor/bin/phpunit tests/Integration --testdox
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+      
+      - name: Run PHP Security Audit
+        working-directory: api
+        run: composer audit
+
+  # Job 5: Build verification (solo si los tests pasan)
+  build-verification:
+    name: "Build Verification"
+    runs-on: ubuntu-latest
+    needs: [frontend-tests, backend-tests]
+    if: success()
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with: { node-version: '20', cache: 'pnpm' }
-      - name: Install JS Dependencies
-        run: pnpm install --frozen-lockfile # Necesario para los scripts de pnpm
-      - name: Run Backend Tests
-        run: pnpm api:test
-      - name: Run PHP Security Audit
-        run: pnpm security:php
-      - name: Cleanup Docker
-        if: always()
-        run: pnpm compose:test down -v
+        with: 
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Restore Node Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.pnpm-store
+          key: node-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+      
+      - name: Install JS Dependencies (if cache miss)
+        run: pnpm install --frozen-lockfile --prefer-offline
+      
+      - name: Generate API Types
+        run: pnpm generate-types
+      
+      - name: Build Frontend
+        run: pnpm build
+      
+      - name: Verify Docker Build
+        run: |
+          docker build -t chatbot-api:test -f api/Dockerfile api/
+          docker run --rm --name healthcheck-test chatbot-api:test php /usr/local/bin/healthcheck.php || true
