@@ -88,11 +88,15 @@ export class ChatApiService {
   }
 
   /**
-   * Validar mensaje antes de enviar
+   * Validar mensaje antes de enviar - SOLO PARA UX
+   * IMPORTANTE: Esta validación es únicamente para mejorar la experiencia del usuario.
+   * Toda la validación crítica y de seguridad se realiza en el backend.
+   * NUNCA confiar en la validación del cliente para seguridad.
    */
-  validateMessage(message: string): { isValid: boolean; error?: string } {
+  validateMessage(message: string): { isValid: boolean; error?: string; isWarning?: boolean } {
     const trimmed = message.trim();
     
+    // Validación básica para feedback inmediato al usuario
     if (!trimmed) {
       return { 
         isValid: false, 
@@ -100,10 +104,28 @@ export class ChatApiService {
       };
     }
     
+    // Advertencia cuando se acerca al límite (para UX)
+    if (trimmed.length > 900) {
+      return { 
+        isValid: true, 
+        error: 'El mensaje está cerca del límite de caracteres',
+        isWarning: true
+      };
+    }
+    
+    // Validación suave para UX - el backend validará con reglas estrictas
     if (trimmed.length > 1000) {
       return { 
         isValid: false, 
         error: i18n.t('validation.tooLong')
+      };
+    }
+    
+    // Validación básica de spam para UX (no crítica)
+    if (/(.)\1{20,}/.test(trimmed)) {
+      return { 
+        isValid: false, 
+        error: 'El mensaje parece contener demasiados caracteres repetidos'
       };
     }
     

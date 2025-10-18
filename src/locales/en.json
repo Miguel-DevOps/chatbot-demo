@@ -31,6 +31,8 @@
   "validation": {
     "emptyMessage": "Message cannot be empty",
     "tooShort": "Message is too short",
-    "tooLong": "Message is too long"
+    "tooLong": "Message is too long (maximum 1000 characters)",
+    "nearLimit": "You're approaching the character limit",
+    "repeatedChars": "Avoid repeating too many identical characters"
   }
 }
