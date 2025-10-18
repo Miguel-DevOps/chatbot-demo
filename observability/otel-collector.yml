@@ -58,7 +58,7 @@ processors:
 exporters:
   # OTLP exporter to Jaeger (using Jaeger's OTLP endpoint)
   otlp/jaeger:
-    endpoint: jaeger:4317
+    endpoint: jaeger:14250
     tls:
       insecure: true
 

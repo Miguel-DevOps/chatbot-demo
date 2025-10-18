@@ -1,6 +1,24 @@
 # Override for production. Adds security and optimizations.
 
 services:
+  nginx:
+    ports:
+      - "80:80"     # HTTP
+      - "443:443"   # HTTPS (for future SSL)
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:noexec,nosuid,size=50m
+      - /var/run:noexec,nosuid,size=10m
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+
   api:
     volumes: # NO source code volumes in production
       - api-logs:/var/www/html/logs
@@ -27,9 +45,9 @@ services:
     ports: [] # Don't expose Redis to outside in production
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
+    user: "999:999"  # Run as redis user explicitly
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=10m
     cap_drop:

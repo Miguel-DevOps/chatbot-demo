@@ -27,7 +27,8 @@ _Código limpio • Pruebas exhaustivas • Estrategia progresiva de despliegue_
 - [🏗️ Niveles de despliegue y arquitectura](#️-niveles-de-despliegue-y-arquitectura)
 - [🗺️ Hoja de ruta estratégica](#️-hoja-de-ruta-estratégica)
 - [🏛️ Decisiones arquitectónicas clave](#️-decisiones-arquitectónicas-clave)
-- [🔧 Configuración y seguridad](#-configuración-y-seguridad)
+- [� Observabilidad y monitorización](#-observabilidad-y-monitorización)
+- [�🔧 Configuración y seguridad](#-configuración-y-seguridad)
 - [🧪 Pruebas y calidad](#-pruebas-y-calidad)
 - [🤝 Contribuir](#-contribuir)
 - [📄 Licencia](#-licencia)
@@ -194,7 +195,122 @@ graph TB
 
 > **ADRs completas:** Decisiones arquitectónicas detalladas con contexto y rationale se documentan en `/docs/ADRs/` (en progreso)
 
-## 🔧 Configuración y seguridad
+## � Observabilidad y monitorización
+
+### 🚀 **Stack completo de observabilidad**
+
+El proyecto incluye una infraestructura de observabilidad lista para producción con recolección de métricas, visualización y trazabilidad distribuida.
+
+#### **🎯 Inicio rápido con observabilidad**
+
+```bash
+# Desarrollo con stack completo de monitorización
+pnpm dev:monit:up
+
+# Producción con observabilidad
+pnpm prod:monit:up
+
+# Acceder a las interfaces de monitorización
+open http://localhost:3000    # Grafana (admin/admin)
+open http://localhost:9090    # Prometheus
+open http://localhost:16686   # Jaeger UI
+```
+
+#### **📈 Arquitectura de monitorización**
+
+```
+Capa de aplicación:
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Nginx Proxy   │───▶│  Chatbot API    │───▶│ OpenTelemetry  │
+│     :80/443     │    │    :9000        │    │   Collector     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                       │
+                                ▼                       ▼
+Recolección métricas:      ┌─────────────────┐    ┌─────────────────┐
+                          │   Prometheus    │    │     Jaeger      │
+                          │     :9090       │    │    :16686       │
+                          └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+Visualización:             ┌─────────────────┐
+                          │    Grafana      │
+                          │     :3000       │
+                          └─────────────────┘
+```
+
+#### **🔍 Métricas disponibles**
+
+**Métricas de rendimiento API:**
+
+- `chatbot_api_http_requests_total` - Contador de requests por endpoint, método, estado
+- `chatbot_api_http_request_duration_seconds` - Histogramas de latencia de requests
+- Tasa de requests por segundo (promedio 5 minutos)
+- Tasas de error por endpoint y código de estado
+
+**Métricas del sistema:**
+
+- Uso de memoria y límites
+- Utilización de CPU
+- Uso de disco y I/O
+- Throughput de red
+
+#### **📊 Dashboards preconfigurados**
+
+**Dashboard resumen API** (`/monitoring/grafana/dashboards/`)
+
+- Tasa de requests HTTP y latencia
+- Seguimiento de tasas de error (respuestas 4xx, 5xx)
+- Top endpoints por tráfico y latencia
+- Utilización de recursos del sistema
+
+**Métricas en tiempo real disponibles:**
+
+```bash
+# Probar el endpoint de métricas
+curl http://localhost/api/v1/metrics
+
+# Consultar Prometheus directamente
+curl "http://localhost:9090/api/v1/query?query=chatbot_api_http_requests_total"
+```
+
+#### **📋 Servicios del stack de monitorización**
+
+| **Servicio**                | **Puerto** | **Propósito**                          | **Estado**   |
+| --------------------------- | ---------- | -------------------------------------- | ------------ |
+| **Prometheus**              | 9090       | Recolección y almacenamiento métricas  | ✅ **Listo** |
+| **Grafana**                 | 3000       | Visualización y dashboards métricas    | ✅ **Listo** |
+| **Jaeger**                  | 16686      | Visualización trazabilidad distribuida | ✅ **Listo** |
+| **OpenTelemetry Collector** | 4317/4318  | Hub recolección trazas y métricas      | ✅ **Listo** |
+
+#### **🎯 Estado actual de observabilidad**
+
+**✅ Completamente implementado:**
+
+- Recolección completa de métricas desde endpoints API
+- Scraping Prometheus en tiempo real (intervalos 10s)
+- Dashboards Grafana preconfigurados
+- Monitorización health checks
+- Métricas request/response con etiquetas
+- Monitorización recursos contenedores
+- Descubrimiento automático de servicios
+
+**🚧 Infraestructura lista (necesita instrumentación app):**
+
+- Trazabilidad distribuida con Jaeger
+- Recolección trazas OpenTelemetry
+- Métricas de negocio personalizadas
+- Seguimiento avanzado de errores
+
+**Variables de entorno observabilidad:**
+
+```bash
+# Configuración observabilidad
+OTEL_SERVICE_NAME=chatbot-api          # Nombre servicio para trazas
+OTEL_TRACES_ENABLED=true               # Habilitar trazabilidad distribuida
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318  # Endpoint collector
+```
+
+## �🔧 Configuración y seguridad
 
 ### 🌍 Variables de entorno
 

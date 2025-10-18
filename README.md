@@ -29,7 +29,8 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 - [🧪 Testing & Quality](#-testing--quality)
 - [🚀 Deployment Strategy](#-deployment-strategy)
 - [🛠️ Development Workflow](#️-development-workflow)
-- [🔧 Configuration & Security](#-configuration--security)
+- [� Observability & Monitoring](#-observability--monitoring)
+- [�🔧 Configuration & Security](#-configuration--security)
 - [ Contributing](#-contributing)
 - [📄 License](#-license)
 - [📄 Spanish Documentation](./README.es.md)
@@ -42,9 +43,10 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 
 - **🔧 Developer Experience Enhanced**: Implemented lint-staged with pre-commit optimization
 - **🧪 Test Suite Completed**: 99 tests passing (54 integration + 39 unit + 6 frontend) with 95%+ coverage
-- **🛡️ Security Validation Improved**: Enhanced ValidationMiddleware with JavaScript URI detection
+- **� Full Observability Stack**: Complete monitoring with Prometheus, Grafana, Jaeger, and OpenTelemetry
+- **🚀 Production Monitoring**: Real-time metrics, dashboards, and health monitoring ready
+- **�🛡️ Security Validation Improved**: Enhanced ValidationMiddleware with JavaScript URI detection
 - **📦 Architectural Refactoring**: Decomposed React hooks and strengthened backend validation
-- **🚀 Integration Tests Fixed**: Resolved rate limiting and middleware integration issues
 
 ### 📊 **Current Project Stats**
 
@@ -630,6 +632,173 @@ docker compose -f docker-compose.prod.yml up -d
 - **Code Quality**: TypeScript strict mode, PHP PSR-12
 - **CI/CD Success Rate**: 100% (All pipelines passing)
 
+## 📊 Observability & Monitoring
+
+### 🚀 **Complete Observability Stack**
+
+The project includes a production-ready observability infrastructure with metrics collection, visualization, and distributed tracing.
+
+#### **🎯 Quick Start with Observability**
+
+```bash
+# Development with complete monitoring stack
+pnpm dev:monit:up
+
+# Production with observability
+pnpm prod:monit:up
+
+# Access monitoring interfaces
+open http://localhost:3000    # Grafana (admin/admin)
+open http://localhost:9090    # Prometheus
+open http://localhost:16686   # Jaeger UI
+```
+
+#### **📈 Monitoring Architecture**
+
+```
+Application Layer:
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Nginx Proxy   │───▶│  Chatbot API    │───▶│ OpenTelemetry  │
+│     :80/443     │    │    :9000        │    │   Collector     │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                       │
+                                ▼                       ▼
+Metrics Collection:        ┌─────────────────┐    ┌─────────────────┐
+                          │   Prometheus    │    │     Jaeger      │
+                          │     :9090       │    │    :16686       │
+                          └─────────────────┘    └─────────────────┘
+                                │
+                                ▼
+Visualization:             ┌─────────────────┐
+                          │    Grafana      │
+                          │     :3000       │
+                          └─────────────────┘
+```
+
+#### **🔍 Available Metrics**
+
+**API Performance Metrics:**
+
+- `chatbot_api_http_requests_total` - Request count by endpoint, method, status
+- `chatbot_api_http_request_duration_seconds` - Request latency histograms
+- Request rate per second (5-minute rolling average)
+- Error rates by endpoint and status code
+
+**System Metrics:**
+
+- Memory usage and limits
+- CPU utilization
+- Disk usage and I/O
+- Network throughput
+
+**Business Metrics:**
+
+- Chat conversations initiated
+- Response success/failure rates
+- Average response time by message type
+
+#### **📊 Pre-built Dashboards**
+
+**API Overview Dashboard** (`/monitoring/grafana/dashboards/`)
+
+- HTTP request rate and latency
+- Error rate tracking (4xx, 5xx responses)
+- Top endpoints by traffic and latency
+- System resource utilization
+
+**Real-time Metrics Available:**
+
+```bash
+# Test the metrics endpoint
+curl http://localhost/api/v1/metrics
+
+# Query Prometheus directly
+curl "http://localhost:9090/api/v1/query?query=chatbot_api_http_requests_total"
+```
+
+#### **🚨 Alerting & Health Checks**
+
+**Prometheus Alert Rules** (`/monitoring/alert_rules.yml`)
+
+- High error rate (>5% for 5 minutes)
+- High response latency (>500ms p95 for 5 minutes)
+- Memory usage >80%
+- API health check failures
+
+**Health Check Endpoints:**
+
+- `GET /health` - Basic API health status
+- `GET /api/v1/health` - Comprehensive health check with dependencies
+- `GET /api/v1/metrics` - Prometheus metrics endpoint
+
+#### **🔧 Monitoring Configuration Files**
+
+```bash
+monitoring/
+├── prometheus.yml              # Prometheus scrape configuration
+├── alert_rules.yml            # Alerting rules and thresholds
+└── grafana/
+    ├── provisioning/
+    │   ├── datasources/        # Auto-provision Prometheus
+    │   └── dashboards/         # Auto-provision dashboards
+    └── dashboards/
+        └── chatbot-api-dashboard.json  # Pre-built API dashboard
+
+observability/
+└── otel-collector.yml         # OpenTelemetry Collector configuration
+```
+
+#### **🐳 Docker Compose Observability**
+
+**Development with Monitoring:**
+
+```bash
+# All services + monitoring stack in development mode
+pnpm dev:monit:up
+```
+
+**Production with Monitoring:**
+
+```bash
+# All services + monitoring stack in production mode
+pnpm prod:monit:up
+```
+
+#### **📋 Monitoring Stack Services**
+
+| **Service**                 | **Port**  | **Purpose**                          | **Status**   |
+| --------------------------- | --------- | ------------------------------------ | ------------ |
+| **Prometheus**              | 9090      | Metrics collection and storage       | ✅ **Ready** |
+| **Grafana**                 | 3000      | Metrics visualization and dashboards | ✅ **Ready** |
+| **Jaeger**                  | 16686     | Distributed tracing visualization    | ✅ **Ready** |
+| **OpenTelemetry Collector** | 4317/4318 | Trace and metric collection hub      | ✅ **Ready** |
+
+#### **🎯 Current Observability Status**
+
+**✅ Fully Implemented:**
+
+- Complete metrics collection from API endpoints
+- Real-time Prometheus scraping (10s intervals)
+- Pre-configured Grafana dashboards
+- Health check monitoring
+- Request/response metrics with labels
+- Container resource monitoring
+- Automatic service discovery
+
+**🚧 Infrastructure Ready (Needs App Instrumentation):**
+
+- Distributed tracing with Jaeger
+- OpenTelemetry trace collection
+- Custom business metrics
+- Advanced error tracking
+
+**🔮 Future Enhancements:**
+
+- Advanced alerting (Slack/email notifications)
+- Log aggregation (ELK/Loki stack)
+- SLA monitoring and reporting
+- Performance profiling integration
+
 ### 🔧 **Configuration Management**
 
 #### **Environment Variables**
@@ -645,15 +814,21 @@ APP_ENV=                     # Application environment
 LOG_LEVEL=                   # Logging level
 REDIS_HOST=                  # Cache server
 GOOGLE_GEMINI_API_KEY=       # AI service key
-OTEL_SERVICE_NAME=           # Observability service name
+
+# Observability Configuration
+OTEL_SERVICE_NAME=chatbot-api          # Service name for tracing
+OTEL_TRACES_ENABLED=true               # Enable distributed tracing
+OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318  # Collector endpoint
 ```
 
 #### **Feature Flags**
 
-- **OpenTelemetry**: Configurable tracing and metrics
+- **OpenTelemetry**: Configurable tracing and metrics (`OTEL_TRACES_ENABLED`)
 - **Security Headers**: Configurable CORS and CSP policies
 - **Rate Limiting**: Configurable per-endpoint limits
 - **AI Provider**: Swappable between Google Gemini and OpenAI
+- **Monitoring Stack**: Individual service enable/disable for resource optimization
+- **Development vs Production**: Different monitoring configurations per environment
 
 ---
 

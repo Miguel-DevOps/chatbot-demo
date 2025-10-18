@@ -1,0 +1,82 @@
+services:
+  # --------------------------------------------------------------------------
+  # Prometheus: Recolecta las métricas de la API
+  # --------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # Grafana: Visualiza las métricas de Prometheus
+  # --------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    volumes:
+      - ./monitoring/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    networks:
+      - chatbot-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # OpenTelemetry Collector: Recibe trazas de la API
+  # --------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector:0.88.0
+    container_name: otel-collector
+    volumes:
+      - ./observability/otel-collector.yml:/etc/otelcol/config.yaml:ro
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317" # gRPC
+      - "4318:4318" # HTTP
+    networks:
+      - chatbot-network
+    restart: unless-stopped
+
+  # --------------------------------------------------------------------------
+  # Jaeger: Almacena y visualiza las trazas de OpenTelemetry
+  # --------------------------------------------------------------------------
+  jaeger:
+    image: jaegertracing/all-in-one:1.50
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # UI
+    networks:
+      - chatbot-network
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+volumes:
+  prometheus-data: {}
+  grafana-data: {}
+
+# La red se define en docker-compose.base.yml, no la redefinimos aquí
