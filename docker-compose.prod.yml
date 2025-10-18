@@ -3,15 +3,15 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-      target: production # Usa la etapa final y optimizada del Dockerfile
-    volumes: # SIN volumes de código fuente en producción
+      target: production # Use final and optimized Dockerfile stage
+    volumes: # NO source code volumes in production
       - api-logs:/var/www/html/logs
       - api-storage:/var/www/html/storage
     environment:
       - APP_ENV=production
       - LOG_LEVEL=info
       - OTEL_TRACES_ENABLED=true
-    ports: [] # No exponer puertos directamente, Nginx es el proxy
+    ports: [] # Don't expose ports directly, Nginx is the proxy
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -26,7 +26,7 @@ services:
         reservations: { memory: 256M, cpus: '0.5' }
 
   redis:
-    ports: [] # No exponer Redis al exterior en producción
+    ports: [] # Don't expose Redis to outside in production
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     restart: unless-stopped
     security_opt:

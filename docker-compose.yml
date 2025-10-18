@@ -17,19 +17,19 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-      target: dependencies # Usar la etapa con dependencias de desarrollo para tests
+      target: dependencies # Use dependencies stage with dev tools for tests
     volumes:
       - ./api:/var/www/html
     environment:
       - APP_ENV=${APP_ENV:-development}
       - LOG_LEVEL=${LOG_LEVEL:-debug}
       - REDIS_HOST=redis
-      - OTEL_TRACES_ENABLED=false # Deshabilitado para desarrollo y tests
+      - OTEL_TRACES_ENABLED=false # Disabled for development and tests
     networks:
       - chatbot-network
     depends_on:
       - redis
-    # Perfil "tests" para que no se levante con un simple "docker-compose up"
+    # Profile "test" so it doesn't start with a simple "docker-compose up"
     profiles:
       - test
 
