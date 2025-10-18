@@ -21,8 +21,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 8
     
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -95,7 +93,7 @@ jobs:
     - name: Install dependencies in container
       run: |
         echo "📦 Installing dependencies in container..."
-        docker compose -f docker-compose.test.yml exec -T api composer install --dev --prefer-dist --no-progress --no-interaction
+        docker compose -f docker-compose.test.yml exec -T api composer install --prefer-dist --no-progress --no-interaction
         echo "✅ Dependencies installed"
     
     - name: Validate composer.json and composer.lock in container
@@ -211,8 +209,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 8
     
     - name: Install frontend dependencies for audit
       run: pnpm install --frozen-lockfile
@@ -337,8 +333,6 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 8
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
