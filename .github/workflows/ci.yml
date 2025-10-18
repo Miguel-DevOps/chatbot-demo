@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI/CD Pipeline
 
 on:
@@ -8,35 +9,30 @@ on:
   workflow_dispatch:
 
 jobs:
-  quality-and-security:
-    name: "Quality & Security Checks"
+  # Job 1: Linter, Type-Checking y Auditorías de Seguridad
+  quality-gate:
+    name: "Quality & Security Gate"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
-
+        with: { node-version: '20', cache: 'pnpm' }
       - name: Install JS Dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Run JS Linter & Type Checker
         run: pnpm lint
-
       - name: Run JS Security Audit
         run: pnpm security:js
 
+  # Job 2: Tests de Frontend (en paralelo con Backend)
   frontend-tests:
     name: "Frontend Tests"
     runs-on: ubuntu-latest
-    needs: quality-and-security
+    needs: quality-gate
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -44,31 +40,31 @@ jobs:
         uses: pnpm/action-setup@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'pnpm'
+        with: { node-version: '20', cache: 'pnpm' }
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
       - name: Run Frontend Tests
         run: pnpm test
 
+  # Job 3: Tests de Backend (en paralelo con Frontend)
   backend-tests:
     name: "Backend Tests (Docker)"
     runs-on: ubuntu-latest
-    needs: quality-and-security
+    needs: quality-gate
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'pnpm' }
+      - name: Install JS Dependencies
+        run: pnpm install --frozen-lockfile # Necesario para los scripts de pnpm
       - name: Run Backend Tests
         run: pnpm api:test
-
       - name: Run PHP Security Audit
         run: pnpm security:php
-
       - name: Cleanup Docker
         if: always()
         run: pnpm compose:test down -v

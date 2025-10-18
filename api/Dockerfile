@@ -1,90 +1,31 @@
-# Multi-stage Dockerfile for Production
-# Stage 1: Dependencies installation
+# api/Dockerfile
+
+# Etapa 1: CONSTRUCTOR (Instala TODO, incluyendo dependencias de desarrollo)
 FROM php:8.2-cli-alpine AS dependencies
 
-# Install system dependencies needed for composer install
-RUN apk add --no-cache \
-    git \
-    curl \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libzip-dev \
-    zip \
-    unzip
-
-# Install PHP extensions required for dependencies
+# Instala dependencias del sistema + extensiones de PHP
+RUN apk add --no-cache git curl libpng-dev oniguruma-dev libxml2-dev freetype-dev libjpeg-turbo-dev libzip-dev zip unzip
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# Install Redis extension
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && apk del .build-deps
 
-# Install Composer
+# Instala Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better layer caching
-COPY composer.json ./
-COPY composer.lock* ./
+# Copia archivos de Composer e instala TODAS las dependencias (incluyendo dev)
+COPY composer.json composer.lock* ./
+RUN composer install --prefer-dist --no-scripts --no-autoloader
 
-# Install dependencies (no-dev for production, no scripts yet, no autoloader)
-# Handle missing composer.lock gracefully in CI environments
-RUN if [ ! -f composer.lock ]; then \
-        echo "composer.lock not found, generating..."; \
-        composer install --no-dev --no-scripts --no-autoloader --prefer-dist; \
-    else \
-        echo "composer.lock found, using it..."; \
-        composer install --no-dev --no-scripts --no-autoloader --prefer-dist; \
-    fi
-
-# Copy source code
+# Copia el resto del código fuente
 COPY . .
 
-# Generate optimized autoloader (this creates the complete vendor directory)
+# Genera el autoloader optimizado
 RUN composer dump-autoload --optimize
-
-# Stage 2: Production runtime
-FROM php:8.2-fpm-alpine AS production
-
-# Install only runtime dependencies (no build tools)
-RUN apk add --no-cache \
-    libpng \
-    oniguruma \
-    libxml2 \
-    freetype \
-    libjpeg-turbo \
-    libzip \
-    curl
-
-# Install PHP extensions (runtime build)
-RUN apk add --no-cache --virtual .build-deps \
-    $PHPIZE_DEPS \
-    libpng-dev \
-    oniguruma-dev \
-    libxml2-dev \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libzip-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apk del .build-deps
-
-# Create non-root user
-RUN addgroup -g 1000 www && \
-    adduser -u 1000 -G www -s /bin/sh -D www
-
-# Set working directory
-WORKDIR /var/www/html
 
 # Create health check script
 RUN echo '<?php' > /usr/local/bin/healthcheck.php && \
@@ -100,20 +41,51 @@ RUN echo '<?php' > /usr/local/bin/healthcheck.php && \
     echo '}' >> /usr/local/bin/healthcheck.php && \
     chmod +x /usr/local/bin/healthcheck.php
 
-# Copy ONLY the built artifacts from dependencies stage (NO composer install here)
-COPY --from=dependencies --chown=www:www /var/www/html/vendor ./vendor
+
+# Etapa 2: PRODUCCIÓN (Imagen final, limpia y segura)
+FROM php:8.2-fpm-alpine AS production
+
+# Instala solo las extensiones de PHP necesarias en runtime
+RUN apk add --no-cache libpng oniguruma libxml2 freetype libjpeg-turbo libzip curl
+RUN apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS \
+    libpng-dev \
+    oniguruma-dev \
+    libxml2-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .build-deps
+
+# Crea el usuario no-root
+RUN addgroup -g 1000 www && adduser -u 1000 -G www -s /bin/sh -D www
+
+WORKDIR /var/www/html
+
+# Instala Composer para poder limpiar dependencias
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copia solo los artefactos necesarios desde la etapa de CONSTRUCTOR
+# Copiamos código fuente y composer files, pero NO el vendor con dev dependencies
+COPY --from=dependencies --chown=www:www /var/www/html/composer.json ./composer.json
+COPY --from=dependencies --chown=www:www /var/www/html/composer.lock ./composer.lock
 COPY --from=dependencies --chown=www:www /var/www/html/public ./public
 COPY --from=dependencies --chown=www:www /var/www/html/src ./src
 COPY --from=dependencies --chown=www:www /var/www/html/knowledge ./knowledge
-COPY --from=dependencies --chown=www:www /var/www/html/composer.json ./composer.json
-COPY --from=dependencies --chown=www:www /var/www/html/composer.lock ./composer.lock
+COPY --from=dependencies --chown=www:www /var/www/html/tests ./tests
+COPY --from=dependencies --chown=www:www /var/www/html/phpunit.xml ./phpunit.xml
 
-# Create required directories and set permissions
-RUN mkdir -p /var/www/html/storage/logs && \
-    mkdir -p /var/www/html/logs && \
-    chown -R www:www /var/www/html/storage /var/www/html/logs && \
-    chmod -R 755 /var/www/html && \
-    chmod -R 775 /var/www/html/storage /var/www/html/logs
+# Instala SOLO dependencias de producción (sin dev) desde cero
+RUN composer install --no-dev --no-scripts --classmap-authoritative --prefer-dist
+
+# Crea directorios y ajusta permisos
+RUN mkdir -p storage/logs logs && \
+    chown -R www:www storage logs && \
+    chmod -R 775 storage logs
 
 # Configure PHP-FPM for security and performance
 RUN echo "pm.max_children = 10" >> /usr/local/etc/php-fpm.d/www.conf && \
@@ -132,15 +104,11 @@ RUN echo "expose_php = Off" >> /usr/local/etc/php/conf.d/security.ini && \
     echo "allow_url_fopen = Off" >> /usr/local/etc/php/conf.d/security.ini && \
     echo "allow_url_include = Off" >> /usr/local/etc/php/conf.d/security.ini
 
-# Switch to non-root user (CRITICAL SECURITY REQUIREMENT)
+# Copy health check script from dependencies stage
+COPY --from=dependencies /usr/local/bin/healthcheck.php /usr/local/bin/healthcheck.php
+
+# Aplica hardening a PHP y PHP-FPM (configuraciones ya aplicadas desde dependencies)
 USER www
-
-# Expose PHP-FPM port
 EXPOSE 9000
-
-# Functional health check that tests PHP-FPM is responding
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD php /usr/local/bin/healthcheck.php || exit 1
-
-# Start PHP-FPM
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD php /usr/local/bin/healthcheck.php || exit 1
 CMD ["php-fpm"]
