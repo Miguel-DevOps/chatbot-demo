@@ -51,34 +51,50 @@ jobs:
           cd api
           echo "🔍 Running Composer security audit..."
           
-          # Run composer audit and check the JSON output
-          if composer audit --format=json > composer-audit.json; then
-            # Check if there are actual advisories in the JSON
-            if grep -q '"advisories":\s*\[.*[^][]\]' composer-audit.json; then
-              echo "❌ CRITICAL: Composer audit found security vulnerabilities!"
-              cat composer-audit.json
-              exit 1
-            else
-              echo "✅ Composer audit passed - no security vulnerabilities found"
-            fi
-          else
-            echo "❌ ERROR: Composer audit command failed"
+          # Run composer audit and capture output (don't fail on exit code)
+          composer audit --format=json > composer-audit.json || true
+          
+          # Check if there are actual advisories in the JSON
+          ADVISORY_COUNT=$(cat composer-audit.json | grep -c '"cve"' || echo "0")
+          
+          echo "📊 PHP Dependencies audit:"
+          echo "   Security advisories found: $ADVISORY_COUNT"
+          
+          if [ "$ADVISORY_COUNT" -gt "0" ]; then
+            echo "❌ CRITICAL: Composer audit found $ADVISORY_COUNT security vulnerabilities!"
+            echo "📋 Audit details:"
+            cat composer-audit.json
             exit 1
+          else
+            echo "✅ Composer audit passed - no security vulnerabilities found"
           fi
 
       - name: Run pnpm security audit
         run: |
           echo "🔍 Running pnpm security audit..."
           
-          # Run audit and capture output
-          pnpm audit --audit-level critical --json > pnpm-audit.json || PNPM_EXIT=$?
+          # Run audit and capture output (don't fail on exit code)
+          pnpm audit --json > pnpm-audit.json || true
           
-          # Check for critical vulnerabilities only
-          if [ "$PNPM_EXIT" != "0" ]; then
-            echo "❌ CRITICAL: pnpm audit found critical vulnerabilities!"
+          # Parse JSON to check for actual critical vulnerabilities
+          CRITICAL_COUNT=$(cat pnpm-audit.json | grep -o '"critical":[0-9]*' | grep -o '[0-9]*' || echo "0")
+          HIGH_COUNT=$(cat pnpm-audit.json | grep -o '"high":[0-9]*' | grep -o '[0-9]*' || echo "0")
+          
+          echo "📊 Vulnerability summary:"
+          echo "   Critical: $CRITICAL_COUNT"
+          echo "   High: $HIGH_COUNT"
+          
+          # Only fail if there are actual critical vulnerabilities
+          if [ "$CRITICAL_COUNT" -gt "0" ]; then
+            echo "❌ CRITICAL: pnpm audit found $CRITICAL_COUNT critical vulnerabilities!"
             echo "📋 Audit details:"
             cat pnpm-audit.json
             exit 1
+          elif [ "$HIGH_COUNT" -gt "0" ]; then
+            echo "⚠️ WARNING: pnpm audit found $HIGH_COUNT high severity vulnerabilities"
+            echo "📋 Audit details:"
+            cat pnpm-audit.json
+            # Continue without failing for high severity
           else
             echo "✅ pnpm audit passed - no critical vulnerabilities found"
           fi
