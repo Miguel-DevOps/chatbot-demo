@@ -11,11 +11,11 @@ docs/
 .vscode/
 .idea/
 
-# Testing and CI (conditionally excluded for production builds)
-# tests/
-# .phpunit.result.cache
-# phpunit.xml
+# Testing and CI files (keep tests for CI builds)
+.phpunit.result.cache
 .github/
+
+# Note: tests/ and phpunit.xml are needed for CI/CD pipeline
 
 # Logs and temporary files
 logs/

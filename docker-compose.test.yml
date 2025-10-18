@@ -4,10 +4,7 @@
 services:
   # PHP-FPM API service for testing
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-      target: dependencies  # Use dependencies stage which has Composer for testing
+    image: chatbot-demo-api:latest  # Use pre-built image from CI
     user: "1000:1000"  # Same user as production
     environment:
       - APP_ENV=testing

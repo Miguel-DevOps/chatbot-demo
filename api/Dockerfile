@@ -32,10 +32,18 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 # Copy composer files first for better layer caching
-COPY composer.json composer.lock ./
+COPY composer.json ./
+COPY composer.lock* ./
 
 # Install dependencies (no-dev for production, no scripts yet, no autoloader)
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# Handle missing composer.lock gracefully in CI environments
+RUN if [ ! -f composer.lock ]; then \
+        echo "composer.lock not found, generating..."; \
+        composer install --no-dev --no-scripts --no-autoloader --prefer-dist; \
+    else \
+        echo "composer.lock found, using it..."; \
+        composer install --no-dev --no-scripts --no-autoloader --prefer-dist; \
+    fi
 
 # Copy source code
 COPY . .

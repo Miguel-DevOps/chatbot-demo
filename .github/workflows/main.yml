@@ -70,15 +70,47 @@ jobs:
         echo "APP_ENV=testing" >> api/.env
         echo "LOG_LEVEL=debug" >> api/.env
     
+    - name: Verify Composer files
+      run: |
+        echo "🔍 Verifying Composer files..."
+        ls -la api/composer.*
+        echo "📋 Composer files present"
+    
+    - name: Test Docker build context
+      run: |
+        echo "🔍 Testing Docker build context..."
+        cd api
+        echo "Files in build context:"
+        ls -la
+        echo "Checking if composer.lock is accessible:"
+        cat composer.lock | head -5
+        echo "✅ Build context verified"
+    
+    - name: Build Docker image
+      run: |
+        echo "🔨 Building Docker image for testing..."
+        cd api
+        docker build --target dependencies -t chatbot-api-test:latest .
+        echo "✅ Docker image built successfully"
+    
     - name: Start containers for testing
       run: |
         # Start the API and Redis containers for testing using test-specific compose
-        docker compose -f docker-compose.test.yml up -d api redis
+        docker compose -f docker-compose.test.yml up -d redis
         
-        # Wait for containers to be ready
-        echo "Waiting for containers to be ready..."
-        timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T api php --version; do sleep 2; done'
+        # Wait for Redis to be ready
+        echo "Waiting for Redis to be ready..."
         timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T redis redis-cli ping; do sleep 2; done'
+        
+        # Override the image in docker-compose with our built image
+        docker tag chatbot-api-test:latest chatbot-demo-api:latest
+        
+        # Start API container
+        docker compose -f docker-compose.test.yml up -d api
+        
+        # Wait for API container to be ready
+        echo "Waiting for API container to be ready..."
+        timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T api php --version; do sleep 2; done'
         
         echo "✅ Containers are ready"
     
