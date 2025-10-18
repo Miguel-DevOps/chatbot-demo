@@ -135,9 +135,9 @@ function testApplicationServices(): bool {
             return false;
         }
         
-        $config = \ChatbotDemo\Config\AppConfig::getInstance();
+        $config = new \ChatbotDemo\Config\AppConfig();
         if (!$config) {
-            logHealth("Failed to get AppConfig instance", 'ERROR');
+            logHealth("Failed to create AppConfig instance", 'ERROR');
             return false;
         }
         

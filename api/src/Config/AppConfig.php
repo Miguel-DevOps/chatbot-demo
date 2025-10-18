@@ -10,24 +10,18 @@ use RuntimeException;
 /**
  * Centralized application configuration
  * Following the 12-Factor App configuration pattern
+ * 
+ * This class is designed to be dependency injected, eliminating the need
+ * for a singleton pattern and reducing global state coupling.
  */
 class AppConfig
 {
     private array $config = [];
-    private static ?AppConfig $instance = null;
 
-    private function __construct()
+    public function __construct()
     {
         $this->loadEnvironmentVariables();
         $this->initializeConfig();
-    }
-
-    public static function getInstance(): AppConfig
-    {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
-        return self::$instance;
     }
 
     private function loadEnvironmentVariables(): void
@@ -51,16 +45,16 @@ class AppConfig
                 'timezone' => 'UTC'
             ],
             'ai' => [
-                'provider' => $_ENV['AI_PROVIDER'] ?? 'demo',
-                'api_key' => $_ENV['GEMINI_API_KEY'] ?? null,
-                'model' => $_ENV['AI_MODEL'] ?? 'gemini-1.5-flash',
+                'provider' => $this->getEnv('AI_PROVIDER', 'demo'),
+                'api_key' => $this->getEnv('GEMINI_API_KEY'),
+                'model' => $this->getEnv('AI_MODEL', 'gemini-1.5-flash'),
             ],
             
             'redis' => [
-                'host' => $_ENV['REDIS_HOST'] ?? 'localhost',
-                'port' => (int)($_ENV['REDIS_PORT'] ?? 6379),
-                'password' => $_ENV['REDIS_PASSWORD'] ?? null,
-                'database' => (int)($_ENV['REDIS_DATABASE'] ?? 0),
+                'host' => $this->getEnv('REDIS_HOST', 'localhost'),
+                'port' => (int)$this->getEnv('REDIS_PORT', '6379'),
+                'password' => $this->getEnv('REDIS_PASSWORD'),
+                'database' => (int)$this->getEnv('REDIS_DATABASE', '0'),
             ],
             'rate_limit' => [
                 'max_requests' => (int) $this->getEnv('RATE_LIMIT_MAX_REQUESTS', '50'),
@@ -69,8 +63,8 @@ class AppConfig
             ],
             'knowledge_base' => [
                 'path' => dirname(__DIR__, 2) . '/knowledge',
-                'cache_enabled' => true,
-                'cache_ttl' => 3600 // 1 hora
+                'cache_enabled' => $this->getEnv('KNOWLEDGE_CACHE_ENABLED', 'true') === 'true',
+                'cache_ttl' => (int)$this->getEnv('KNOWLEDGE_CACHE_TTL', '3600')
             ],
             'cors' => [
                 'allowed_origins' => explode(',', $this->getEnv('CORS_ORIGINS', '*')),
@@ -84,6 +78,12 @@ class AppConfig
         ];
     }
 
+    /**
+     * Standardized environment variable access
+     * 
+     * Prioritizes $_ENV over $_SERVER for consistency and follows
+     * the 12-Factor App methodology for configuration.
+     */
     private function getEnv(string $key, string $default = ''): string
     {
         return $_ENV[$key] ?? $_SERVER[$key] ?? $default;
@@ -106,7 +106,7 @@ class AppConfig
 
     public function getGeminiApiKey(): string
     {
-        $apiKey = $this->get('gemini.api_key');
+        $apiKey = $this->get('ai.api_key');
         
         if (empty($apiKey) || $apiKey === 'gemini_api_key_here') {
             if ($this->isProduction()) {
@@ -143,6 +143,23 @@ class AppConfig
         return $instance;
     }
 
+    /**
+     * Create configuration instance with custom environment variables (for testing)
+     */
+    public static function createWithEnv(array $envVars): AppConfig
+    {
+        // Temporarily override $_ENV for testing
+        $originalEnv = $_ENV;
+        $_ENV = array_merge($_ENV, $envVars);
+        
+        $instance = new self();
+        
+        // Restore original environment
+        $_ENV = $originalEnv;
+        
+        return $instance;
+    }
+
     public function getVersion(): string
     {
         return $this->get('app.version', '2.0.0');
@@ -154,13 +171,5 @@ class AppConfig
     public function toArray(): array
     {
         return $this->config;
-    }
-
-    /**
-     * Reset singleton instance (for testing)
-     */
-    public static function reset(): void
-    {
-        self::$instance = null;
     }
 }

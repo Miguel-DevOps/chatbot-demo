@@ -54,15 +54,20 @@ class DependencyContainer
         $builder = new ContainerBuilder();
         
         // Enable compilation in production for better performance
-        $config = AppConfig::getInstance();
-        if (!$config->isDevelopment()) {
-            $builder->enableCompilation(__DIR__ . '/../../cache');
+        // Create temporary AppConfig instance to check environment
+        $tempConfig = new AppConfig();
+        if (!$tempConfig->isDevelopment()) {
+            $cacheDir = __DIR__ . '/../../cache';
+            if (!is_dir($cacheDir)) {
+                mkdir($cacheDir, 0755, true);
+            }
+            $builder->enableCompilation($cacheDir);
         }
-
+        
         $builder->addDefinitions([
-            // Configuration singleton
+            // Configuration - single instance managed by DI container
             AppConfig::class => function () {
-                return AppConfig::getInstance();
+                return new AppConfig();
             },
 
             // Logger configuration
@@ -169,8 +174,8 @@ class DependencyContainer
 
             // Prometheus registry with Redis storage
             CollectorRegistry::class => function (AppConfig $config, LoggerInterface $logger) {
-                $redisHost = $_ENV['REDIS_HOST'] ?? $config->get('redis.host', 'localhost');
-                $redisPort = (int) ($_ENV['REDIS_PORT'] ?? $config->get('redis.port', 6379));
+                $redisHost = $config->get('redis.host', 'localhost');
+                $redisPort = $config->get('redis.port', 6379);
 
                 try {
                     $redisOptions = ['host' => $redisHost, 'port' => $redisPort];
