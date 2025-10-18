@@ -26,8 +26,6 @@ services:
     volumes:
       - api-logs:/var/www/html/logs
       - api-storage:/var/www/html/storage
-      # Mount source code for development/testing (with proper ownership)
-      - ./api:/var/www/html:rw
     depends_on:
       - redis
     networks:

@@ -11,10 +11,10 @@ docs/
 .vscode/
 .idea/
 
-# Testing and CI
-tests/
-.phpunit.result.cache
-phpunit.xml
+# Testing and CI (conditionally excluded for production builds)
+# tests/
+# .phpunit.result.cache
+# phpunit.xml
 .github/
 
 # Logs and temporary files
