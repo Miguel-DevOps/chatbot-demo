@@ -157,7 +157,7 @@ class OpenTelemetryBootstrap
     /**
      * Create enriched span attributes for database operations
      */
-    public static function createDbAttributes(string $operation, string $table = null): array
+    public static function createDbAttributes(string $operation, ?string $table = null): array
     {
         $attrs = [
             'db.system' => 'redis',

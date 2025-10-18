@@ -106,7 +106,13 @@ class AppConfig
 
     public function getGeminiApiKey(): string
     {
-        $apiKey = $this->get('ai.api_key');
+        // First try test configuration format (gemini.api_key)
+        $apiKey = $this->get('gemini.api_key');
+        
+        // If not found, try normal configuration format (ai.api_key)
+        if (empty($apiKey)) {
+            $apiKey = $this->get('ai.api_key');
+        }
         
         if (empty($apiKey) || $apiKey === 'gemini_api_key_here') {
             if ($this->isProduction()) {
@@ -139,7 +145,7 @@ class AppConfig
     public static function createFromArray(array $config): AppConfig
     {
         $instance = new self();
-        $instance->config = $config;
+        $instance->config = array_merge($instance->config, $config);
         return $instance;
     }
 
