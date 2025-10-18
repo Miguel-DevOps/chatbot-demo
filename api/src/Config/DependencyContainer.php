@@ -169,56 +169,29 @@ class DependencyContainer
 
             // Prometheus registry with Redis storage
             CollectorRegistry::class => function (AppConfig $config, LoggerInterface $logger) {
-                // Redis configuration from environment variables
                 $redisHost = $_ENV['REDIS_HOST'] ?? $config->get('redis.host', 'localhost');
                 $redisPort = (int) ($_ENV['REDIS_PORT'] ?? $config->get('redis.port', 6379));
-                $redisPassword = $_ENV['REDIS_PASSWORD'] ?? $config->get('redis.password', null);
-                $redisDatabase = (int) ($_ENV['REDIS_DATABASE'] ?? $config->get('redis.database', 0));
-                
+
                 try {
-                    // Configure Redis connection
-                    $redisOptions = [
-                        'host' => $redisHost,
-                        'port' => $redisPort,
-                        'database' => $redisDatabase,
-                        'timeout' => 0.1,
-                    ];
-                    
-                    if (!empty($redisPassword)) {
-                        $redisOptions['password'] = $redisPassword;
-                    }
-                    
-                    $logger->info('Connecting to Redis for metrics storage', [
-                        'host' => $redisHost,
-                        'port' => $redisPort,
-                        'database' => $redisDatabase
-                    ]);
-                    
-                    return new CollectorRegistry(new Redis($redisOptions));
+                    $redisOptions = ['host' => $redisHost, 'port' => $redisPort];
+
+                    // CRITICAL FIX! Use the correct adapter from promphp/prometheus_client_php
+                    // Must use \Prometheus\Storage\Redis, not instantiate a \Redis object.
+                    $adapter = new \Prometheus\Storage\Redis($redisOptions);
+
+                    $logger->info('Successfully configured Prometheus Redis adapter.', $redisOptions);
+
+                    return new CollectorRegistry($adapter);
+
                 } catch (\Exception $e) {
-                    $logger->warning('Redis not available for metrics, falling back to APCu', [
+                    $logger->error('Failed to connect to Redis for metrics. Application will not start.', [
                         'error' => $e->getMessage(),
                         'redis_host' => $redisHost,
                         'redis_port' => $redisPort
                     ]);
-                    
-                    // Fallback to APCu if Redis is not available
-                    try {
-                        if (extension_loaded('apcu') && apcu_enabled()) {
-                            return new CollectorRegistry(new APC());
-                        }
-                        
-                        // If APCu is not enabled, fallback to in-memory
-                        $logger->warning('APCu not enabled, falling back to in-memory storage');
-                        return new CollectorRegistry(new InMemory());
-                    } catch (\Exception $apcException) {
-                        $logger->warning('APCu not available, falling back to in-memory storage', [
-                            'apc_error' => $apcException->getMessage()
-                        ]);
-                        
-                        // Final fallback to in-memory storage
-                        return new CollectorRegistry(new InMemory());
-                    }
+
+                    // Fail-Fast Principle: If Redis is down, the application should not start.
+                    throw new \RuntimeException('Metrics storage (Redis) is unavailable.', 0, $e);
                 }
             },
 
