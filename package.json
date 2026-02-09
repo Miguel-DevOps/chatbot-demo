@@ -1,7 +1,7 @@
 {
   "name": "chatbot-demo",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
+  "packageManager": "pnpm@10.29.2+sha512.bef43fa759d91fd2da4b319a5a0d13ef7a45bb985a3d7342058470f9d2051a3ba8674e629672654686ef9443ad13a82da2beb9eeb3e0221c87b8154fff9d74b8",
   "description": "Modern chatbot compatible with PHP and React, portable and easy to integrate into any environment.",
   "author": "Miguel-DevOps",
   "license": "MIT",
