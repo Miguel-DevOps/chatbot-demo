@@ -29,24 +29,25 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 - [🧪 Testing & Quality](#-testing--quality)
 - [🚀 Deployment Strategy](#-deployment-strategy)
 - [🛠️ Development Workflow](#️-development-workflow)
-- [� Observability & Monitoring](#-observability--monitoring)
-- [�🔧 Configuration & Security](#-configuration--security)
-- [ Contributing](#-contributing)
+- [📊 Observability & Monitoring](#-observability--monitoring)
+- [🔧 Configuration & Security](#-configuration--security)
+- [📚 Documentation](#-documentation)
+- [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
-- [📄 Spanish Documentation](./README.es.md)
 
 ---
 
 ## 🚨 Recent Updates
 
-### ✅ **Latest Achievements (October 2025)**
+### ✅ **Current Status & Achievements**
 
 - **🔧 Developer Experience Enhanced**: Implemented lint-staged with pre-commit optimization
 - **🧪 Test Suite Completed**: 99 tests passing (54 integration + 39 unit + 6 frontend) with 95%+ coverage
-- **� Full Observability Stack**: Complete monitoring with Prometheus, Grafana, Jaeger, and OpenTelemetry
+- **📊 Full Observability Stack**: Complete monitoring with Prometheus, Grafana, Jaeger, and OpenTelemetry
 - **🚀 Production Monitoring**: Real-time metrics, dashboards, and health monitoring ready
-- **�🛡️ Security Validation Improved**: Enhanced ValidationMiddleware with JavaScript URI detection
+- **🛡️ Security Validation Improved**: Enhanced ValidationMiddleware with JavaScript URI detection
 - **📦 Architectural Refactoring**: Decomposed React hooks and strengthened backend validation
+- **📅 Architectural Evolution Plan**: Comprehensive refinement roadmap defined (see [docs/evolution/ARCHITECTURE_EVOLUTION_EN.md](./docs/evolution/ARCHITECTURE_EVOLUTION_EN.md))
 
 ### 📊 **Current Project Stats**
 
@@ -60,7 +61,7 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 
 > 📚 **Educational Focus**: This section documents architectural constraints that create learning opportunities for systematic improvement.
 
-### � Architectural Constraints by Design
+### 📝 Architectural Constraints by Design
 
 **Filesystem Dependencies**
 
@@ -99,12 +100,10 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 
 ### 🎯 Next Evolution Steps
 
-1. **Database Abstraction**: Implement storage interfaces for Phase 2 deployment capabilities
-2. **Configuration Externalization**: Move hardcoded values to environment variables
-3. **Content Management Interface**: Abstract knowledge base from filesystem to database/CMS
-4. **Observability Enhancement**: Complete metrics and monitoring integration
-
-## 🎯 Project Vision
+1. **Domain Layer Implementation**: Explicit domain entities and value objects
+2. **Storage Abstraction**: Database migration from filesystem to PostgreSQL/MySQL
+3. **Frontend State Management**: Global state for persistent conversations
+4. **Observability Simplification**: Reduced tracing complexity with decorators
 
 ## 🎯 Project Vision
 
@@ -124,7 +123,7 @@ This project serves as an **educational blueprint** for modern chatbot developme
 
 ## ⚡ Quick Start
 
-### � **One-Command Setup (Recommended)**
+### 🚀 **One-Command Setup (Recommended)**
 
 ```bash
 git clone https://github.com/Miguel-DevOps/chatbot-demo.git
@@ -518,7 +517,45 @@ server {
 - [ ] Set proper file permissions (`644` for files, `755` for directories)
 - [ ] Block access to sensitive files (`.env`, `.git`, etc.)
 - [ ] Use Nginx + PHP-FPM (recommended web server configuration)
-- [ ] Implement rate limiting at web server level (already configured in Nginx)## 🧪 Testing & Quality
+- [ ] Implement rate limiting at web server level (already configured in Nginx)
+
+## 📚 Documentation
+
+### 📖 Available Documentation
+
+**Project Overview:**
+
+- **[README.md](./README.md)** - Main project documentation (English)
+- **[README.es.md](./README.es.md)** - Spanish version documentation
+
+**Architectural Evolution:**
+
+- **[ARCHITECTURE_EVOLUTION_EN.md](./docs/evolution/ARCHITECTURE_EVOLUTION_EN.md)** - Architectural evolution plan (English)
+- **[ARCHITECTURE_EVOLUTION_ES.md](./docs/evolution/ARCHITECTURE_EVOLUTION_ES.md)** - Plan de evolución arquitectónica (Español)
+
+**Project Structure:**
+
+- **[PROJECT_STRUCTURE.md](./docs/PROJECT_STRUCTURE.md)** - Guide to project organization and file structure
+
+**API Documentation:**
+
+- **OpenAPI Specification**: [openapi.yml](../openapi.yml) - Complete API specification
+- **Interactive API Docs**: Available at `/api/docs` when running locally
+
+### 🏗️ Architectural Documentation
+
+- **Architectural Decision Records (ADRs)**: Located in `/docs/architecture/` (in development)
+- **Deployment Guides**: Various deployment strategies documented
+- **Development Guides**: Contributor guidelines and setup instructions
+
+### 🔍 Finding Information
+
+- Use the table of contents at the top of each README
+- Check the `docs/` directory for specialized documentation
+- Refer to code comments for implementation details
+- Visit the [GitHub repository](https://github.com/Miguel-DevOps/chatbot-demo) for issues and discussions
+
+## 🧪 Testing & Quality
 
 ### 🔬 Test Strategy
 
@@ -594,7 +631,7 @@ composer validate           # Validate composer.json
 composer audit              # Security audit
 ```
 
-### � **Development Environment**
+### 🏗️ **Development Environment**
 
 #### **Local Development Setup**
 

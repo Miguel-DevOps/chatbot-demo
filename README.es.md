@@ -27,8 +27,9 @@ _Código limpio • Pruebas exhaustivas • Estrategia progresiva de despliegue_
 - [🏗️ Niveles de despliegue y arquitectura](#️-niveles-de-despliegue-y-arquitectura)
 - [🗺️ Hoja de ruta estratégica](#️-hoja-de-ruta-estratégica)
 - [🏛️ Decisiones arquitectónicas clave](#️-decisiones-arquitectónicas-clave)
-- [� Observabilidad y monitorización](#-observabilidad-y-monitorización)
-- [�🔧 Configuración y seguridad](#-configuración-y-seguridad)
+- [📊 Observabilidad y monitorización](#-observabilidad-y-monitorización)
+- [🔧 Configuración y seguridad](#-configuración-y-seguridad)
+- [📚 Documentación](#-documentación)
 - [🧪 Pruebas y calidad](#-pruebas-y-calidad)
 - [🤝 Contribuir](#-contribuir)
 - [📄 Licencia](#-licencia)
@@ -96,7 +97,7 @@ pnpm dev                                    # Frontend (http:/
 
 > 🚨 **DEPRECIADO**: `php -S` crea divergencia de entornos y ya no se recomienda. Usa `docker-compose up` para desarrollo que coincida con producción.
 
-## �️ Niveles de despliegue y arquitectura
+## 🏗️ Niveles de despliegue y arquitectura
 
 ### 📊 Matriz de estrategia de despliegue
 
@@ -195,7 +196,7 @@ graph TB
 
 > **ADRs completas:** Decisiones arquitectónicas detalladas con contexto y rationale se documentan en `/docs/ADRs/` (en progreso)
 
-## � Observabilidad y monitorización
+## 📊 Observabilidad y monitorización
 
 ### 🚀 **Stack completo de observabilidad**
 
@@ -310,7 +311,7 @@ OTEL_TRACES_ENABLED=true               # Habilitar trazabilidad distribuida
 OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318  # Endpoint collector
 ```
 
-## �🔧 Configuración y seguridad
+## 🔧 Configuración y seguridad
 
 ### 🌍 Variables de entorno
 
@@ -422,6 +423,42 @@ server {
 - [ ] Bloquear acceso a ficheros sensibles (`.env`, `.git`, etc.)
 - [ ] Usar PHP-FPM en lugar de `mod_php` cuando sea posible
 - [ ] Implementar limitación de peticiones a nivel de servidor web
+
+## 📚 Documentación
+
+### 📖 Documentación Disponible
+
+**Visión general del proyecto:**
+
+- **[README.es.md](./README.es.md)** - Documentación principal en español
+- **[README.md](./README.md)** - Versión en inglés
+
+**Evolución arquitectónica:**
+
+- **[ARCHITECTURE_EVOLUTION_ES.md](./docs/evolution/ARCHITECTURE_EVOLUTION_ES.md)** - Plan de evolución arquitectónica (Español)
+- **[ARCHITECTURE_EVOLUTION_EN.md](./docs/evolution/ARCHITECTURE_EVOLUTION_EN.md)** - Architectural evolution plan (English)
+
+**Estructura del proyecto:**
+
+- **[PROJECT_STRUCTURE.md](./docs/PROJECT_STRUCTURE.md)** - Guía de organización y estructura de archivos
+
+**Documentación de API:**
+
+- **Especificación OpenAPI**: [openapi.yml](../openapi.yml) - Especificación completa de la API
+- **Documentación interactiva**: Disponible en `/api/docs` al ejecutar localmente
+
+### 🏗️ Documentación arquitectónica
+
+- **Registros de Decisiones Arquitectónicas (ADRs)**: En `/docs/architecture/` (en desarrollo)
+- **Guías de despliegue**: Varias estrategias de despliegue documentadas
+- **Guías de desarrollo**: Instrucciones para contribuidores y configuración
+
+### 🔍 Encontrar información
+
+- Usa la tabla de contenidos al inicio de cada README
+- Revisa el directorio `docs/` para documentación especializada
+- Consulta comentarios en el código para detalles de implementación
+- Visita el [repositorio de GitHub](https://github.com/Miguel-DevOps/chatbot-demo) para issues y discusiones
 
 ## 🧪 Pruebas y calidad
 
