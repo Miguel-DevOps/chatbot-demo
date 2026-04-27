@@ -1,0 +1,76 @@
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies (installed fresh in container)
+node_modules/
+.pnpm-store/
+api/vendor/
+
+# Environment files (keep .env.example for reference)
+.env
+.env.*
+!.env.example
+
+# Documentation and markdown
+*.md
+README*
+CHANGELOG*
+CONTRIBUTING*
+LICENSE*
+SECURITY*
+docs/
+
+# Tests
+tests/
+test/
+spec/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+.ci-package.json
+
+# Logs and temporary files
+logs/
+*.log
+*.tmp
+*.temp
+
+# IDE and editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Docker self-reference
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.next/
+.nuxt/
+.output/
+
+# Supply chain
+cosign.key
+*.attestation
+sbom.*.json
+
+# Husky
+.husky/

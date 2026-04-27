@@ -1,24 +1,23 @@
 <div align="center">
 
-# 🤖 Chatbot Demo
+<img src="public/chatbot-demo.png" alt="Chatbot Demo logo" width="120"/>
 
-**An educational chatbot blueprint demonstrating evolutionary software architecture**  
-_Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
+# Chatbot Demo | Developmi
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](./LICENSE)
-[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-blue?style=for-the-badge&logo=githubactions)](/.github/workflows/main.yml)
-[![Tests](https://img.shields.io/badge/Tests-99%20Passing-brightgreen?style=for-the-badge)](#testing--quality)
-[![Architecture Status](https://img.shields.io/badge/Status-Educational%20Blueprint-orange?style=for-the-badge)](#vision)
+_A production-capable educational blueprint that saves teams 40+ hours of architecture decision-making by demonstrating the complete journey from proof-of-concept to enterprise-ready chatbot deployment._
+
+[![React](https://img.shields.io/badge/React_|_19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript_|_5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PHP](https://img.shields.io/badge/PHP_|_8.4-777BB4?style=for-the-badge&logo=php&logoColor=white)](https://www.php.net/)
+[![Slim](https://img.shields.io/badge/Slim_|_4-719E40?style=for-the-badge)](https://www.slimframework.com/)
+[![Docker](https://img.shields.io/badge/Docker_|_READY-2496ED?style=for-the-badge&logo=docker&logoColor=white)](#-docker-deployment)
+[![CI](https://img.shields.io/badge/CI-Passing-brightgreen?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Miguel-DevOps/chatbot-demo/actions)
+[![Status](https://img.shields.io/badge/Status-Educational_Blueprint-blue?style=for-the-badge)](#-overview)
+[![License](https://img.shields.io/badge/License-MIT_©_Miguel_Lozano_|_Developmi-blue?style=for-the-badge)](./LICENSE)
+[![Maintainer](https://img.shields.io/badge/Maintainer-Miguel_Lozano-black?style=for-the-badge)](https://github.com/Miguel-DevOps)
+[![Role](https://img.shields.io/badge/Cloud_&_Infrastructure_Engineer-333?style=for-the-badge)](https://www.linkedin.com/in/miguel-dev-ops)
 
 </div>
-
-<div align="center">
-
-![React](https://img.shields.io/badge/React-19.2-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php&logoColor=white)
-![Slim Framework](https://img.shields.io/badge/Slim-Framework%204-719E40?style=for-the-badge)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)</div>
 
 ## 📋 Table of Contents
 
@@ -32,8 +31,11 @@ _Clean Code • Comprehensive Testing • Progressive Deployment Strategy_
 - [📊 Observability & Monitoring](#-observability--monitoring)
 - [🔧 Configuration & Security](#-configuration--security)
 - [📚 Documentation](#-documentation)
+- [🔒 Security](#-security)
+- [📋 Changelog](#-changelog)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
+- [🤝 Contact & Support](#-contact--support)
 
 ---
 
@@ -128,10 +130,11 @@ This project serves as an **educational blueprint** for modern chatbot developme
 ```bash
 git clone https://github.com/Miguel-DevOps/chatbot-demo.git
 cd chatbot-demo
-./scripts/dev.sh start
+pnpm install --frozen-lockfile
+pnpm dev:up
 ```
 
-The development script will:
+The development setup will:
 
 - 🔧 Install all dependencies (pnpm + composer)
 - 🏗️ Build frontend and backend
@@ -182,14 +185,17 @@ docker compose up -d
 ### 🧪 **Testing & Development**
 
 ```bash
-# Run all tests
-./scripts/test.sh
+# Run all frontend tests
+pnpm test
 
-# Local CI/CD simulation
-./scripts/test-local.sh
+# Run all backend tests
+pnpm api:test:ci
+
+# Run CI verification locally
+pnpm ci:verify
 
 # Development with hot reload
-./scripts/dev.sh watch
+pnpm dev
 ```
 
 ## 🏗️ Project Architecture
@@ -525,8 +531,7 @@ server {
 
 **Project Overview:**
 
-- **[README.md](./README.md)** - Main project documentation (English)
-- **[README.es.md](./README.es.md)** - Spanish version documentation
+- **[README.md](./README.md)** - Main project documentation
 
 **Architectural Evolution:**
 
@@ -590,24 +595,23 @@ pnpm audit && composer audit   # Dependency vulnerabilities
 #### **Main Project Scripts** (`/scripts/`)
 
 ```bash
-# Complete development management
-./scripts/dev.sh start          # Full environment setup
-./scripts/dev.sh watch          # Development with hot reload
-./scripts/dev.sh stop           # Clean shutdown
+pnpm dev:up                    # Full dev environment setup
+pnpm dev                       # Development with hot reload
+pnpm dev:down                  # Clean shutdown
 
 # Testing and quality
-./scripts/test.sh                # Complete test suite
-./scripts/test-local.sh          # CI/CD simulation locally
-./scripts/security-audit.sh     # Security vulnerability scan
+pnpm ci:test:all                # Complete test suite
+pnpm ci:verify                  # CI/CD simulation locally
+pnpm security:js && pnpm security:php:ci  # Security audit
 
 # Building and deployment
-./scripts/build.sh all           # Complete project build
-./scripts/build.sh frontend     # Frontend only
-./scripts/build.sh backend      # Backend only
-./scripts/deploy-prod.sh         # Production deployment
+pnpm ci:build                   # Complete project build
+pnpm build                      # Frontend only
+pnpm ci:install:php && composer test --working-dir=api  # Backend only
+pnpm prod:up                    # Production deployment
 
 # API validation
-./scripts/validate-api-contracts.sh  # OpenAPI contract testing
+pnpm generate-types             # OpenAPI type generation
 ```
 
 #### **Frontend Scripts** (pnpm)
@@ -648,10 +652,10 @@ composer audit              # Security audit
 docker compose -f docker-compose.prod.yml up -d
 
 # Complete build validation
-./scripts/build.sh all && ./scripts/test.sh
+pnpm ci:verify
 
 # Security and compliance check
-./scripts/security-audit.sh
+pnpm ci:quality
 ```
 
 ### 📊 **Project Statistics**
@@ -892,7 +896,34 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318  # Collector endpoint
 
 ---
 
+## 🔒 Security
+
+This project follows a coordinated disclosure policy.
+If you discover a vulnerability, **do not open a public issue**.
+See [SECURITY.md](./SECURITY.md) for reporting instructions and response timelines.
+
+**Key security features implemented:**
+
+- Non-root containers (UID 1000:1000), read-only filesystems, dropped Linux capabilities
+- Rate limiting at Nginx level (5 req/s chat, 10 req/s API)
+- Input validation and sanitization, XSS/CSRF/SQL injection prevention
+- PHP security hardening (disabled dangerous functions)
+- CI/CD security auditing (Trivy, Composer audit, pnpm audit)
+- Environment variable protection, HTTPS enforcement, secure headers
+
+---
+
+## 📋 Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for the full version history.
+The project follows [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
+
+---
+
 ## 🤝 Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](./CONTRIBUTING.md) before opening a pull request.
+This project follows [Conventional Commits](https://www.conventionalcommits.org/) and the Developmi engineering standard.
 
 ### 🎯 **Current Priorities**
 
@@ -925,12 +956,12 @@ cd chatbot-demo
 git checkout -b feature/database-abstraction
 
 # 3. Development with tests
-./scripts/dev.sh start     # Start development environment
-./scripts/test.sh          # Validate changes
+pnpm dev:up                # Start development environment
+pnpm ci:test:all           # Validate changes
 
 # 4. Quality checks
-pnpm lint && pnpm typecheck
-./scripts/security-audit.sh
+pnpm lint
+pnpm security:js && pnpm security:php:ci
 
 # 5. Submit PR with:
 #    - Clear description of changes
@@ -970,7 +1001,7 @@ cd chatbot-demo
 git checkout -b feature/database-abstraction
 
 # 3. Development with tests
-./scripts/test.sh    # Validate changes
+pnpm ci:test:all    # Validate changes
 
 # 4. Submit PR with:
 #    - Clear description of changes
@@ -987,9 +1018,10 @@ git checkout -b feature/database-abstraction
 
 ## 📄 License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+Copyright © 2026 Miguel Lozano | Developmi. All rights reserved.
+Licensed under the [MIT License](./LICENSE).
 
-### 🎓 **Educational Use Encouraged**
+### 🎓 Educational Use Encouraged
 
 - ✅ Use as learning reference for modern full-stack development
 - ✅ Fork for workshops, training, and educational purposes
@@ -997,7 +1029,7 @@ MIT License - see [LICENSE](./LICENSE) for details.
 - ✅ Reference in technical blogs, documentation, and presentations
 - ✅ Contribute improvements and share learning experiences
 
-### 🚀 **Production Use**
+### 🚀 Production Use
 
 - ✅ Deploy for commercial and non-commercial applications
 - ✅ Modify and customize for specific business needs
@@ -1006,22 +1038,17 @@ MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 
-<div align="center">
+## 🤝 Contact & Support
 
-### 🌟 **Project Status: Educational Blueprint**
+**Maintained by:** Miguel Lozano | Developmi
 
-_This project demonstrates modern development practices with comprehensive testing, architectural evolution patterns, and progressive deployment strategies._
+- **Role:** Cloud & Infrastructure Engineer | FinOps & Bare Metal Specialist | AI Sovereignty Strategist under NIST/DORA Standards
+- **Philosophy:** _Security is not a feature; it is the baseline._
+- **Website:** [developmi.com](https://developmi.com)
+- **GitHub:** [Miguel-DevOps](https://github.com/Miguel-DevOps)
+- **LinkedIn:** [Miguel Lozano](https://www.linkedin.com/in/miguel-dev-ops)
 
-**🤝 Contributions Welcome** • **📚 Educational Resource** • **🚀 Production-Capable**
+---
 
-[![GitHub](https://img.shields.io/badge/GitHub-Miguel--DevOps-black.svg?style=for-the-badge&logo=github)](https://github.com/Miguel-DevOps)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue.svg?style=for-the-badge&logo=linkedin)](https://linkedin.com/in/miguel-lozano-devops)
+© 2026 Miguel Lozano | Developmi. All rights reserved.
 
-**Built with ❤️ for the developer community**
-
-### 📊 **Quick Stats**
-
-- **99 Tests Passing** | **95%+ Coverage** | **Zero Critical Vulnerabilities**
-- **React 19.2** | **PHP 8.4** | **Docker Ready** | **CI/CD Automated**
-
-</div>
